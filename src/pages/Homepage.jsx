@@ -93,7 +93,7 @@ export default function Homepage() {
       <header style={s.topbar}>
         <div style={s.topbarInner}>
           <button type="button" className="login-link" style={s.loginLink}>
-            <span style={s.lockIcon}>⚿</span> Área reservada
+                        Área reservada
           </button>
         </div>
       </header>
