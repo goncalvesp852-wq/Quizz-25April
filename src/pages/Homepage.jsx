@@ -123,7 +123,9 @@ export default function Homepage() {
           <div style={s.footerLogos}>
             <div style={s.logoGroup}>
               <span style={s.footerLabel}>Financiamento</span>
-              <img src={LOGO_FCT} alt="Fundação para a Ciência e a Tecnologia" style={s.logoFct} />
+              <div style={s.logoRow}>
+                <img src={LOGO_FCT} alt="Fundação para a Ciência e a Tecnologia" style={s.logoFct} />
+              </div>
             </div>
             <div style={s.logoDivider} />
             <div style={s.logoGroup}>
@@ -191,11 +193,11 @@ const s = {
   // rodapé
   footer: { position: "relative", zIndex: 2, background: "#F5F1E8", borderTop: "1px solid #00000010", padding: "20px 24px 16px" },
   footerInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 28, flexWrap: "wrap" },
-  footerLogos: { display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" },
-  logoGroup: { display: "flex", flexDirection: "column", gap: 7 },
+  footerLogos: { display: "flex", alignItems: "flex-start", gap: 24, flexWrap: "wrap" },
+  logoGroup: { display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
   logoDivider: { width: 1, alignSelf: "stretch", background: "#00000012", margin: "4px 0" },
-  footerLabel: { fontSize: 9.5, letterSpacing: ".14em", textTransform: "uppercase", color: "#A8A299", fontWeight: 600 },
-  logoRow: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" },
+  footerLabel: { fontSize: 9.5, letterSpacing: ".14em", textTransform: "uppercase", color: "#A8A299", fontWeight: 600, height: 12, lineHeight: "12px" },
+  logoRow: { display: "flex", gap: 18, alignItems: "center", height: 60 },
   logoImg: { height: 34, width: "auto", objectFit: "contain", maxWidth: 150 },
   logoFct: { height: 36, width: "auto", objectFit: "contain", maxWidth: 160 },
   logoCd25a: { height: 50, width: "auto", objectFit: "contain", maxWidth: 200 },
