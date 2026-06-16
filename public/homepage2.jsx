@@ -6,6 +6,8 @@ const LOGO_FCT = "/images/logo_fct.png";
 const LOGO_UC = "/images/logo_uc.png";
 const LOGO_CD25A = "/images/logo_cd25a.png";
 const LOGO_C50 = "/images/logo_c50.png";
+const LOGO_PNA = "/images/logo_pna.png";
+const LOGO_REBOBINAR = "/images/logo_rebobinar.png";
 
 // ════════════════════════════════════════════════════════════
 //  HOMEPAGE — «25 de Abril em 3D»
@@ -121,20 +123,24 @@ export default function Homepage() {
           <div style={s.footerLogos}>
             <div style={s.logoGroup}>
               <span style={s.footerLabel}>Financiamento</span>
-              <img src={LOGO_FCT} alt="Fundação para a Ciência e a Tecnologia" style={s.logoImg} />
+              <img src={LOGO_FCT} alt="Fundação para a Ciência e a Tecnologia" style={s.logoFct} />
             </div>
             <div style={s.logoDivider} />
             <div style={s.logoGroup}>
               <span style={s.footerLabel}>Coordenação</span>
               <div style={s.logoRow}>
-                <img src={LOGO_CD25A} alt="Centro de Documentação 25 de Abril" style={s.logoImg} />
-                <img src={LOGO_UC} alt="Universidade de Coimbra" style={s.logoImgSm} />
+                <img src={LOGO_CD25A} alt="Centro de Documentação 25 de Abril" style={s.logoCd25a} />
+                <img src={LOGO_UC} alt="Universidade de Coimbra" style={s.logoUc} />
               </div>
             </div>
             <div style={s.logoDivider} />
             <div style={s.logoGroup}>
               <span style={s.footerLabel}>Apoio</span>
-              <img src={LOGO_C50} alt="Comemorações 50 anos do 25 de Abril" style={s.logoImg} />
+              <div style={s.logoRow}>
+                <img src={LOGO_C50} alt="Comemorações 50 anos do 25 de Abril" style={s.logoC50} />
+                <img src={LOGO_PNA} alt="Plano Nacional das Artes" style={s.logoApoio} />
+                <img src={LOGO_REBOBINAR} alt="Rebobinar" style={s.logoApoio} />
+              </div>
             </div>
           </div>
 
@@ -189,9 +195,13 @@ const s = {
   logoGroup: { display: "flex", flexDirection: "column", gap: 7 },
   logoDivider: { width: 1, alignSelf: "stretch", background: "#00000012", margin: "4px 0" },
   footerLabel: { fontSize: 9.5, letterSpacing: ".14em", textTransform: "uppercase", color: "#A8A299", fontWeight: 600 },
-  logoRow: { display: "flex", gap: 14, alignItems: "center" },
+  logoRow: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" },
   logoImg: { height: 34, width: "auto", objectFit: "contain", maxWidth: 150 },
-  logoImgSm: { height: 22, width: "auto", objectFit: "contain", maxWidth: 110 },
+  logoFct: { height: 36, width: "auto", objectFit: "contain", maxWidth: 160 },
+  logoCd25a: { height: 50, width: "auto", objectFit: "contain", maxWidth: 200 },
+  logoUc: { height: 46, width: "auto", objectFit: "contain", maxWidth: 150 },
+  logoC50: { height: 58, width: "auto", objectFit: "contain", maxWidth: 150 },
+  logoApoio: { height: 48, width: "auto", objectFit: "contain", maxWidth: 150 },
   social: { display: "flex", alignItems: "center", gap: 16, maxWidth: 320 },
   socialText: { fontSize: 12, color: "#8A847B", lineHeight: 1.4, textAlign: "right" },
   socialIcons: { display: "flex", gap: 8, flexShrink: 0 },
