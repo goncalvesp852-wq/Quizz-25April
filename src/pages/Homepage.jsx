@@ -30,18 +30,18 @@ const BG_CARROS = "/images/bg_carros.jpg";
 const BG_ULTRAMAR = "/images/bg_ultramar.jpg";
 
 const BG_SLIDES = [
-  { src: BG_SOLDADOS, credito: "Gigon / CD25A-UC" },
-  { src: BG_TANQUE, credito: "DN-DL / CD25A-UC" },
-  { src: BG_PUNHOS, credito: "MDP-CDE / CD25A-UC" },
-  { src: BG_MANIF_LX, credito: "DGCS / CD25A-UC" },
-  { src: BG_JIPE, credito: "DN-DL / CD25A-UC" },
-  { src: BG_FASCISMO, credito: "MDP-CDE / CD25A-UC" },
-  { src: BG_LONDRES, credito: "DGCS / CD25A-UC" },
-  { src: BG_CRIANCAS, credito: "Manuel Brito / CD25A-UC" },
-  { src: BG_COLONIAS, credito: "Maria Paz Carvalho / CD25A-UC" },
-  { src: BG_POVO_CARRO, credito: "DGCS / CD25A-UC" },
-  { src: BG_CARROS, credito: "DGCS / CD25A-UC" },
-  { src: BG_ULTRAMAR, credito: "DN-DL / CD25A-UC" },
+  { src: BG_SOLDADOS },
+  { src: BG_TANQUE },
+  { src: BG_PUNHOS },
+  { src: BG_MANIF_LX },
+  { src: BG_JIPE },
+  { src: BG_FASCISMO },
+  { src: BG_LONDRES },
+  { src: BG_CRIANCAS },
+  { src: BG_COLONIAS },
+  { src: BG_POVO_CARRO },
+  { src: BG_CARROS },
+  { src: BG_ULTRAMAR },
 ];
 
 const FADE_INTERVAL = 7000; // 6s por imagem
@@ -86,7 +86,6 @@ export default function Homepage() {
             aria-hidden="true" />
         ))}
         <div style={s.bgScrim} aria-hidden="true" />
-        <div style={s.bgCredito}>{BG_SLIDES[slide].credito}</div>
       </div>
 
       {/* ───── TOPO: área reservada ───── */}
@@ -173,7 +172,6 @@ const s = {
   bgWrap: { position: "fixed", inset: 0, zIndex: 0 },
   bgSlide: { position: "absolute", inset: 0, transition: "opacity 3s ease-in-out", backgroundSize: "cover", backgroundPosition: "center", willChange: "opacity, transform" },
   bgScrim: { position: "absolute", inset: 0, background: "linear-gradient(180deg, #00000078 0%, #00000052 40%, #0000008c 100%)" },
-  bgCredito: { position: "absolute", bottom: 130, right: 18, fontSize: 10.5, color: "#ffffff80", letterSpacing: ".05em", textShadow: "0 1px 4px #000", zIndex: 3 },
   // topo
   topbar: { position: "relative", zIndex: 2, padding: "20px 24px" },
   topbarInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end" },
