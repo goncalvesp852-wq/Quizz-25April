@@ -145,7 +145,6 @@ export default function Homepage() {
           </div>
 
           <div className="footer-social" style={s.social}>
-            <span style={s.socialText}>Acompanhe as itinerâncias das exposições nas nossas redes sociais</span>
             <div style={s.socialIcons}>
               <a href="#" className="social-link" style={s.socialLink} aria-label="Instagram do CD25A">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -202,9 +201,8 @@ const s = {
   logoUc: { height: 46, width: "auto", objectFit: "contain", maxWidth: 150 },
   logoC50: { height: 58, width: "auto", objectFit: "contain", maxWidth: 150 },
   logoApoio: { height: 48, width: "auto", objectFit: "contain", maxWidth: 150 },
-  social: { display: "flex", alignItems: "center", gap: 16, maxWidth: 320 },
-  socialText: { fontSize: 12, color: "#8A847B", lineHeight: 1.4, textAlign: "right" },
+  social: { display: "flex", alignItems: "center", marginLeft: "auto" },
   socialIcons: { display: "flex", gap: 8, flexShrink: 0 },
-  socialLink: { display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "#2B27230a", border: "1px solid #00000012", color: "#54504A", textDecoration: "none", transition: "all .15s" },
+  socialLink: { display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 9, background: "#2B27230a", border: "1px solid #00000012", color: "#54504A", textDecoration: "none", transition: "all .15s" },
   copyright: { maxWidth: 1100, margin: "16px auto 0", paddingTop: 14, borderTop: "1px solid #00000010", fontSize: 11.5, color: "#A8A299", textAlign: "center", lineHeight: 1.5 },
 };
