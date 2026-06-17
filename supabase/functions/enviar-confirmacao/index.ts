@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Variáveis de ambiente (configuradas no painel do Supabase)
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL     = Deno.env.get("FROM_EMAIL") ?? "25 de Abril em 3D <noreply@cd25a.uc.pt>";
+const FROM_EMAIL     = Deno.env.get("FROM_EMAIL") ?? "25 de Abril em 3D <onboarding@resend.dev>";
 const SITE_URL       = Deno.env.get("SITE_URL") ?? "https://quizz-25-april.vercel.app";
 
 // Cliente Supabase com service role (variáveis automáticas nas Edge Functions)
