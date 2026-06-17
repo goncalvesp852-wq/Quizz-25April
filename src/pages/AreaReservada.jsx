@@ -36,7 +36,7 @@ const COPIAS = [
 
 const TABS = [{ id: "sumario", label: "Sumário" }, { id: "analise", label: "Análise de dados" }, { id: "requisicoes", label: "Requisições" }];
 
-export default function App() {
+export default function App({ onVoltar }) {
   const [auth, setAuth] = useState(false);
   const [tab, setTab] = useState("sumario");
 
@@ -55,6 +55,7 @@ export default function App() {
           <input style={s.input} type="password" placeholder="Palavra-passe" />
           <button style={s.loginBtn} onClick={() => setAuth(true)}>Entrar</button>
           <p style={s.loginNota}>Autenticação gerida com segurança na versão final (Supabase Auth).</p>
+          <button type="button" onClick={() => onVoltar?.()} style={{ background: "none", border: "none", color: "#8A847B", fontSize: 13, cursor: "pointer", marginTop: 4, fontFamily: "inherit" }}>← Voltar ao site</button>
         </div>
       </div>
     );

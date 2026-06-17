@@ -119,7 +119,7 @@ function TextInput({ value, onChange, placeholder }) {
   return <input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={s.input} />;
 }
 
-export default function App() {
+export default function App({ onVoltar }) {
   const [phase, setPhase] = useState("codigo"); // codigo → intro → form → done
   const [codigo, setCodigo] = useState("");
   const [codigoErro, setCodigoErro] = useState(false);
@@ -220,6 +220,9 @@ export default function App() {
             <p style={s.codeNota}>
               Na versão final, o código é validado automaticamente contra a requisição que lhe deu origem.
             </p>
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <button type="button" onClick={() => onVoltar?.()} style={{ ...s.btnGhost, fontSize: 13.5, padding: "8px 16px" }}>← Voltar ao início</button>
+            </div>
           </div>
         )}
 
@@ -439,7 +442,9 @@ export default function App() {
                 <p style={s.confirmText}>
                   Obrigado por avaliar a exposição. A avaliação ficou automaticamente associada à requisição <strong>{codigo.toUpperCase()}</strong> e os dados alimentam as estatísticas do projeto.
                 </p>
-                <button type="button" onClick={() => { setStep(0); setPhase("codigo"); setCodigo(""); }} style={s.btnGhost}>← Início</button>
+                <div style={{ textAlign: "center" }}>
+                  <button type="button" onClick={() => onVoltar?.()} style={s.btnGhost}>← Voltar ao início</button>
+                </div>
               </>
             )}
           </div>

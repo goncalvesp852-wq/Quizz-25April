@@ -46,7 +46,7 @@ const BG_SLIDES = [
 
 const FADE_INTERVAL = 7000; // 6s por imagem
 
-export default function Homepage() {
+export default function Homepage({ onRequisitar, onAvaliar, onAreaReservada }) {
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
@@ -91,8 +91,8 @@ export default function Homepage() {
       {/* ───── TOPO: área reservada ───── */}
       <header style={s.topbar}>
         <div style={s.topbarInner}>
-          <button type="button" className="login-link" style={s.loginLink}>
-                        Área reservada
+          <button type="button" className="login-link" style={s.loginLink} onClick={onAreaReservada}>
+            Área reservada
           </button>
         </div>
       </header>
@@ -106,10 +106,10 @@ export default function Homepage() {
         </div>
 
         <div style={s.ctaRow}>
-          <button type="button" className="req-btn" style={s.reqBtn}>
+          <button type="button" className="req-btn" style={s.reqBtn} onClick={onRequisitar}>
             Requisitar a exposição →
           </button>
-          <button type="button" className="aval-btn" style={s.avalBtn}>
+          <button type="button" className="aval-btn" style={s.avalBtn} onClick={onAvaliar}>
             Avaliar a exposição
           </button>
         </div>
