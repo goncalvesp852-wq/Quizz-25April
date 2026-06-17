@@ -433,6 +433,7 @@ export default function App({ onVoltar }) {
   return (
     <div style={s.page}>
       <TopBar onVoltar={onVoltar} />
+      <div style={s.content}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap');
         * { box-sizing: border-box; }
@@ -726,6 +727,7 @@ export default function App({ onVoltar }) {
           </div>
         )}
       </div>
+      </div>{/* /content */}
     </div>
   );
 }
@@ -744,7 +746,8 @@ function Section({ titulo, nota, children }) {
 //  ESTILOS
 // ════════════════════════════════════════════════════════════
 const s = {
-  page: { minHeight: "100vh", background: "linear-gradient(170deg,#FBFAF7 0%,#F6F3EC 100%)", fontFamily: "'Inter',system-ui,sans-serif", padding: "40px 20px", color: "#2B2723" },
+  page: { minHeight: "100vh", background: "linear-gradient(170deg,#FBFAF7 0%,#F6F3EC 100%)", fontFamily: "'Inter',system-ui,sans-serif", color: "#2B2723" },
+  content: { padding: "32px 20px 60px" },
   shell: { maxWidth: 600, margin: "0 auto" },
   header: { marginBottom: 24 },
   eyebrow: { fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase", color: "#B08968", fontWeight: 600, marginBottom: 10 },
