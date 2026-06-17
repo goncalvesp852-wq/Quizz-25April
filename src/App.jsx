@@ -21,6 +21,8 @@ export default function App() {
   const [page, setPage] = useState("home");
   const Current = PAGES.find((p) => p.id === page).Comp;
 
+  const goHome = () => setPage("home");
+
   return (
     <div>
       <nav style={nav.bar}>
@@ -39,7 +41,10 @@ export default function App() {
           </button>
         ))}
       </nav>
-      <Current />
+      {page === "home" && <Homepage onRequisitar={() => setPage("requisicao")} />}
+      {page === "requisicao" && <Requisicao onVoltar={goHome} />}
+      {page === "avaliacao" && <Avaliacao onVoltar={goHome} />}
+      {page === "reservada" && <AreaReservada onVoltar={goHome} />}
     </div>
   );
 }

@@ -294,7 +294,7 @@ function Calendario({ local, value, onChange, accent }) {
 // ════════════════════════════════════════════════════════════
 //  APP
 // ════════════════════════════════════════════════════════════
-export default function App() {
+export default function App({ onVoltar }) {
   // gate: "intro" → "rgpd" → "form" (wizard) → confirmação. "recusou" = saída.
   const [phase, setPhase] = useState("intro");
   const [step, setStep] = useState(0);
@@ -609,9 +609,12 @@ export default function App() {
               )}
 
               {/* Navegação */}
-              {erroValidacao && (
+              {Array.isArray(erroValidacao) && erroValidacao.length > 0 && (
                 <div style={s.erroValidacao}>
-                  Antes de continuar, preencha: {erroValidacao.join(", ")}.
+                  <strong>Campos obrigatórios em falta:</strong>
+                  <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
+                    {erroValidacao.map((campo) => <li key={campo}>{campo}</li>)}
+                  </ul>
                 </div>
               )}
               <div style={s.navRow}>
@@ -661,7 +664,7 @@ export default function App() {
                   <div style={s.resumoRow}><span style={s.resumoK}>Datas</span><span>{f.datas?.start && f.datas?.end ? `${f.datas.start.toLocaleDateString("pt-PT")} — ${f.datas.end.toLocaleDateString("pt-PT")}` : "—"}</span></div>
                   <div style={s.resumoRow}><span style={s.resumoK}>Discentes</span><span>{f.grupo.nDiscentes || "—"}</span></div>
                 </div>
-                <button type="button" onClick={() => setStep(0)} style={{ ...s.btnGhost, marginTop: 18 }}>← Voltar ao início</button>
+                <button type="button" onClick={() => onVoltar?.()} style={{ ...s.btnGhost, marginTop: 18 }}>← Voltar ao início</button>
               </>
             ) : (
               <>
