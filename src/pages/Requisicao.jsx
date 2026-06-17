@@ -339,7 +339,7 @@ export default function App() {
     setErroValidacao(null);
     setStep((s) => Math.min(s + 1, SECTIONS.length));
   }
-  function prev() { setErroValidacao(null); setStep((s) => Math.max(s - 1, 0)); }
+  function prev() { setErroValidacao(null); setSubmitError(null); setStep((s) => Math.max(s - 1, 0)); }
 
   const isDone = step >= SECTIONS.length;
 
@@ -640,7 +640,7 @@ export default function App() {
                   <button type="button" onClick={() => { setSubmitError(null); setCodigoGerado(null); }} style={{ ...s.btnPrimary, background: accent }}>Tentar novamente</button>
                 </div>
               </>
-            ) : (
+            ) : codigoGerado ? (
               <>
                 <div style={{ ...s.confirmIcon, background: accent + "18", color: accent }}>✓</div>
                 <h2 style={s.confirmTitle}>Requisição submetida</h2>
@@ -662,6 +662,12 @@ export default function App() {
                   <div style={s.resumoRow}><span style={s.resumoK}>Discentes</span><span>{f.grupo.nDiscentes || "—"}</span></div>
                 </div>
                 <button type="button" onClick={() => setStep(0)} style={{ ...s.btnGhost, marginTop: 18 }}>← Voltar ao início</button>
+              </>
+            ) : (
+              <>
+                <div style={{ ...s.confirmIcon, background: accent + "18", color: accent, fontSize: 20 }}>⏳</div>
+                <h2 style={s.confirmTitle}>A submeter…</h2>
+                <p style={s.confirmText}>A sua requisição está a ser registada. Por favor, aguarde.</p>
               </>
             )}
           </div>
