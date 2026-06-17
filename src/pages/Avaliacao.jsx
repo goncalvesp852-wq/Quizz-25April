@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase.js";
 
 // ════════════════════════════════════════════════════════════
 //  QUESTIONÁRIO DE AVALIAÇÃO PÓS-EXPOSIÇÃO
@@ -122,6 +123,7 @@ export default function App() {
   const [phase, setPhase] = useState("codigo"); // codigo → intro → form → done
   const [codigo, setCodigo] = useState("");
   const [codigoErro, setCodigoErro] = useState(false);
+  const [dadosReq, setDadosReq] = useState(null);
   const [step, setStep] = useState(0);
   const [f, setF] = useState({
     ident: {}, atividadesKit: [], anos: [], dominiosAE: [], disciplinas: [], atividadesPos: [], tecnologias: [],
@@ -133,12 +135,51 @@ export default function App() {
   const progress = ((step + 1) / SECTIONS.length) * 100;
   const isDone = step >= SECTIONS.length;
 
-  // Validação simples do formato do código (maqueta): REQ-AAAA-NNNN
-  function validarCodigo() {
-    const ok = /^REQ-\d{4}-\d{3,5}$/i.test(codigo.trim());
-    if (ok) { setCodigoErro(false); setPhase("intro"); }
-    else setCodigoErro(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  // Validate code against Supabase
+  async function validarCodigo() {
+    const trimmed = codigo.trim();
+    if (!trimmed) { setCodigoErro(true); return; }
+    try {
+      const { data, error } = await supabase.rpc("validar_codigo", { p_codigo: trimmed });
+      if (error) { setCodigoErro(true); return; }
+      if (data?.valido === true) {
+        setCodigoErro(false);
+        setDadosReq(data);
+        // Pre-fill identification fields
+        setF((prev) => ({
+          ...prev,
+          ident: {
+            ...prev.ident,
+            escola: data.nome_escola || prev.ident?.escola || "",
+            docente: data.docente_nome || prev.ident?.docente || "",
+            email: data.docente_email || prev.ident?.email || "",
+          },
+        }));
+        setPhase("intro");
+      } else {
+        setCodigoErro(true);
+      }
+    } catch {
+      setCodigoErro(true);
+    }
   }
+
+  // Submit evaluation when wizard is done
+  useEffect(() => {
+    if (phase !== "form" || !isDone || submitted || submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    supabase.rpc("submeter_avaliacao", { p_codigo: codigo.trim(), p_respostas: f })
+      .then(({ error }) => {
+        if (error) { setSubmitError(error.message); }
+        else { setSubmitted(true); }
+      })
+      .finally(() => setSubmitting(false));
+  }, [isDone, phase]);
 
   return (
     <div style={s.page}>
@@ -376,14 +417,31 @@ export default function App() {
         {/* ───── CONFIRMAÇÃO ───── */}
         {phase === "form" && isDone && (
           <div style={s.card}>
-            <div style={{ ...s.codeIcon, background: ACCENT + "18", color: ACCENT }}>✓</div>
-            <h2 style={s.confirmTitle}>Avaliação concluída</h2>
-            <p style={s.confirmText}>
-              Obrigado por avaliar a exposição. Na versão final, ao submeter, a avaliação fica
-              automaticamente associada à requisição <strong>{codigo.toUpperCase()}</strong> e os
-              dados alimentam as estatísticas do projeto.
-            </p>
-            <button type="button" onClick={() => { setStep(0); setPhase("codigo"); setCodigo(""); }} style={s.btnGhost}>← Início</button>
+            {submitting ? (
+              <>
+                <div style={{ ...s.codeIcon, background: ACCENT + "18", color: ACCENT, fontSize: 20 }}>⏳</div>
+                <h2 style={s.confirmTitle}>A submeter…</h2>
+                <p style={s.confirmText}>A sua avaliação está a ser registada. Por favor, aguarde.</p>
+              </>
+            ) : submitError ? (
+              <>
+                <div style={{ ...s.codeIcon, background: "#FFF0F0", color: "#C0392B" }}>✕</div>
+                <h2 style={s.confirmTitle}>Erro ao submeter</h2>
+                <p style={s.confirmText}>{submitError}</p>
+                <div style={{ textAlign: "center" }}>
+                  <button type="button" onClick={() => { setSubmitError(null); setSubmitted(false); }} style={{ ...s.btnPrimary, background: ACCENT }}>Tentar novamente</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ ...s.codeIcon, background: ACCENT + "18", color: ACCENT }}>✓</div>
+                <h2 style={s.confirmTitle}>Avaliação concluída</h2>
+                <p style={s.confirmText}>
+                  Obrigado por avaliar a exposição. A avaliação ficou automaticamente associada à requisição <strong>{codigo.toUpperCase()}</strong> e os dados alimentam as estatísticas do projeto.
+                </p>
+                <button type="button" onClick={() => { setStep(0); setPhase("codigo"); setCodigo(""); }} style={s.btnGhost}>← Início</button>
+              </>
+            )}
           </div>
         )}
       </div>
