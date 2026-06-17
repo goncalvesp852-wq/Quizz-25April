@@ -312,8 +312,34 @@ export default function App() {
   const sec = SECTIONS[step];
   const progress = ((step + 1) / SECTIONS.length) * 100;
 
-  function next() { setStep((s) => Math.min(s + 1, SECTIONS.length)); }
-  function prev() { setStep((s) => Math.max(s - 1, 0)); }
+  const [erroValidacao, setErroValidacao] = useState(null);
+
+  // Campos obrigatórios por secção (os que a base de dados exige ou
+  // sem os quais a requisição não faz sentido).
+  function camposEmFalta() {
+    const sec = SECTIONS[step];
+    const faltam = [];
+    if (sec.id === "entidade") {
+      if (!f.nomeEscola?.trim()) faltam.push("Nome da escola / agrupamento");
+    }
+    if (sec.id === "docente") {
+      if (!f.docente?.nome?.trim()) faltam.push("Nome do/a docente responsável");
+      if (!f.docente?.email?.trim()) faltam.push("E-mail do/a docente");
+    }
+    if (sec.id === "datas") {
+      if (!f.local) faltam.push("Local (Coimbra ou Évora)");
+      if (!f.datas?.start || !f.datas?.end) faltam.push("Período de datas no calendário");
+    }
+    return faltam;
+  }
+
+  function next() {
+    const faltam = camposEmFalta();
+    if (faltam.length) { setErroValidacao(faltam); return; }
+    setErroValidacao(null);
+    setStep((s) => Math.min(s + 1, SECTIONS.length));
+  }
+  function prev() { setErroValidacao(null); setStep((s) => Math.max(s - 1, 0)); }
 
   const isDone = step >= SECTIONS.length;
 
@@ -583,6 +609,11 @@ export default function App() {
               )}
 
               {/* Navegação */}
+              {erroValidacao && (
+                <div style={s.erroValidacao}>
+                  Antes de continuar, preencha: {erroValidacao.join(", ")}.
+                </div>
+              )}
               <div style={s.navRow}>
                 <button type="button" onClick={prev} disabled={step === 0} style={{ ...s.btnGhost, opacity: step === 0 ? 0.4 : 1, cursor: step === 0 ? "not-allowed" : "pointer" }}>Anterior</button>
                 <button type="button" onClick={next} style={{ ...s.btnPrimary, background: accent }}>{step === SECTIONS.length - 1 ? "Rever e submeter" : "Continuar"}</button>
@@ -680,6 +711,7 @@ const s = {
   localDot: { width: 11, height: 11, borderRadius: "50%" },
   localNome: { fontFamily: "'Fraunces',serif", fontSize: 20, fontWeight: 600 },
   placeholder: { padding: "24px", textAlign: "center", color: "#9A948B", fontSize: 14, background: "#FBFAF7", borderRadius: 12, border: "1px dashed #DDD8CF" },
+  erroValidacao: { marginTop: 20, background: "#FDECEA", border: "1px solid #F5C6C0", borderRadius: 12, padding: "12px 16px", fontSize: 13.5, lineHeight: 1.5, color: "#B3261E" },
   navRow: { display: "flex", justifyContent: "space-between", gap: 12, marginTop: 28, paddingTop: 20, borderTop: "1px solid #F0ECE4" },
   btnGhost: { padding: "12px 22px", border: "1.5px solid #E4E1DA", borderRadius: 12, background: "#fff", fontSize: 14.5, fontWeight: 600, fontFamily: "inherit", color: "#54504A", cursor: "pointer" },
   btnPrimary: { padding: "12px 26px", border: "none", borderRadius: 12, color: "#fff", fontSize: 14.5, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" },
