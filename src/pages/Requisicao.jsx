@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase.js";
+import TopBar from "../components/TopBar.jsx";
 
 // ════════════════════════════════════════════════════════════
 //  DADOS — extraídos do questionário LimeSurvey (estrutura real)
@@ -392,6 +393,7 @@ export default function App({ onVoltar }) {
 
   return (
     <div style={s.page}>
+      <TopBar onVoltar={onVoltar} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap');
         * { box-sizing: border-box; }

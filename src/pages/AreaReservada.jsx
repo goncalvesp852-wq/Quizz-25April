@@ -1,4 +1,5 @@
 import { useState } from "react";
+// onVoltar recebido via prop (App.jsx)
 
 // ════════════════════════════════════════════════════════════
 //  ÁREA RESERVADA — Equipa CD25A  (versão analítica)
@@ -73,7 +74,10 @@ export default function App({ onVoltar }) {
               <div style={s.brandSub}>Equipa CD25A · 25 de Abril em 3D</div>
             </div>
           </div>
-          <button style={s.sairBtn} onClick={() => setAuth(false)}>Sair</button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button style={{ ...s.sairBtn, background: "transparent", color: "#8A847B", border: "1px solid #DDD8CF" }} onClick={() => onVoltar?.()}>← Início</button>
+            <button style={s.sairBtn} onClick={() => setAuth(false)}>Sair</button>
+          </div>
         </header>
         <nav style={s.tabs}>
           {TABS.map((t) => (
