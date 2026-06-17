@@ -106,10 +106,13 @@ function makeReservaBlocker(reservas, isNonBusiness) {
 // ════════════════════════════════════════════════════════════
 //  COMPONENTES DE CAMPO
 // ════════════════════════════════════════════════════════════
-function Field({ label, children, hint }) {
+function Field({ label, children, hint, required }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <label style={s.label}>{label}</label>
+      <label style={s.label}>
+        {label}
+        {required && <span style={{ color: "#D9534F", marginLeft: 4 }} aria-label="obrigatório">*</span>}
+      </label>
       {hint && <div style={s.hint}>{hint}</div>}
       {children}
     </div>
@@ -315,21 +318,57 @@ export default function App({ onVoltar }) {
 
   const [erroValidacao, setErroValidacao] = useState(null);
 
-  // Campos obrigatórios por secção (os que a base de dados exige ou
-  // sem os quais a requisição não faz sentido).
   function camposEmFalta() {
-    const sec = SECTIONS[step];
+    const id = SECTIONS[step].id;
     const faltam = [];
-    if (sec.id === "entidade") {
-      if (!f.nomeEscola?.trim()) faltam.push("Nome da escola / agrupamento");
+    if (id === "entidade") {
+      if (!f.nomeEscola?.trim())   faltam.push("Nome da escola / agrupamento (1.1)");
+      if (!f.tipoEstab)            faltam.push("Tipo de estabelecimento (1.2)");
+      if (!f.nuts)                 faltam.push("Região / NUT III (1.4)");
+      if (!f.distrito)             faltam.push("Distrito (1.5)");
+      if (!f.concelho?.trim())     faltam.push("Concelho (1.6)");
+      if (!f.q18)                  faltam.push("Questão 1.8");
+      if (!f.q19)                  faltam.push("Questão 1.9");
+      if (!f.q110)                 faltam.push("Questão 1.10");
+      if (!f.q111)                 faltam.push("Questão 1.11");
     }
-    if (sec.id === "docente") {
-      if (!f.docente?.nome?.trim()) faltam.push("Nome do/a docente responsável");
+    if (id === "docente") {
+      if (!f.docente?.nome?.trim())  faltam.push("Nome do/a docente responsável");
       if (!f.docente?.email?.trim()) faltam.push("E-mail do/a docente");
     }
-    if (sec.id === "datas") {
-      if (!f.local) faltam.push("Local (Coimbra ou Évora)");
-      if (!f.datas?.start || !f.datas?.end) faltam.push("Período de datas no calendário");
+    if (id === "pedagogica") {
+      if (!f.grupo?.nDiscentes)      faltam.push("N.º previsto de discentes (3.1)");
+      if (!f.q32)                    faltam.push("Necessidades educativas especiais (3.2)");
+      if (!f.disciplinaPrincipal)    faltam.push("Disciplina principal (3.3)");
+      if (!f.integradaEm?.length)    faltam.push("Integração da exposição (3.4)");
+      if (!f.q35)                    faltam.push("Aprendizagens Essenciais de História (3.5)");
+      if (!f.q37)                    faltam.push("Articulação com outras disciplinas (3.7)");
+      if (!f.q39)                    faltam.push("Materiais pedagógicos CD25A-UC (3.9)");
+    }
+    if (id === "objetivos") {
+      if (!f.objetivoPrincipal)      faltam.push("Objetivo principal (4.1)");
+      if (!f.competencias?.length)   faltam.push("Competências a desenvolver (4.2)");
+      if (!f.necessidades?.length)   faltam.push("Necessidades dos/as discentes (4.4)");
+      if (!f.impacto?.length)        faltam.push("Impacto esperado (4.5)");
+      if (!f.conhecimentoPrevio?.length) faltam.push("Conhecimento prévio esperado (4.6)");
+    }
+    if (id === "atividades") {
+      if (!f.q51) faltam.push("Atividade de preparação antes da exposição (5.1)");
+      if (!f.q52) faltam.push("Atividade de seguimento após a exposição (5.2)");
+    }
+    if (id === "repositorio") {
+      if (!f.q61) faltam.push("Conhecia o repositório digital (6.1)");
+      if (!f.q62) faltam.push("Tenciona aceder ao repositório (6.2)");
+      if (!f.q63) faltam.push("Tenciona utilizar o kit pedagógico (6.3)");
+    }
+    if (id === "relacao") {
+      if (!f.q71) faltam.push("Como tomou conhecimento da exposição (7.1)");
+      if (!f.q72) faltam.push("A instituição já conhecia o CD25A-UC (7.2)");
+      if (!f.q73) faltam.push("A escola já requisitou anteriormente (7.3)");
+    }
+    if (id === "datas") {
+      if (!f.local)                          faltam.push("Local (Coimbra ou Évora)");
+      if (!f.datas?.start || !f.datas?.end)  faltam.push("Período de datas no calendário");
     }
     return faltam;
   }
@@ -481,16 +520,19 @@ export default function App({ onVoltar }) {
               </div>
             </div>
 
+            <div style={{ marginBottom: 6, fontSize: 12.5, color: "#9A948B", textAlign: "right" }}>
+              <span style={{ color: "#D9534F", fontWeight: 700 }}>*</span> campo obrigatório
+            </div>
             <div style={s.card}>
               {/* ───── SECÇÃO 1 ───── */}
               {sec.id === "entidade" && (
                 <Section titulo="Identificação da entidade requerente">
-                  <Field label="1.1. Nome da escola / agrupamento"><TextInput value={f.nomeEscola} onChange={(v) => set("nomeEscola", v)} placeholder="Ex.: Agrupamento de Escolas de…" /></Field>
-                  <Field label="1.2. Tipo de estabelecimento"><RadioGroup options={OPC.tipoEstab} value={f.tipoEstab} onChange={(v) => set("tipoEstab", v)} accent={accent} /></Field>
+                  <Field label="1.1. Nome da escola / agrupamento" required><TextInput value={f.nomeEscola} onChange={(v) => set("nomeEscola", v)} placeholder="Ex.: Agrupamento de Escolas de…" /></Field>
+                  <Field label="1.2. Tipo de estabelecimento" required><RadioGroup options={OPC.tipoEstab} value={f.tipoEstab} onChange={(v) => set("tipoEstab", v)} accent={accent} /></Field>
                   <Field label="1.3. Estatuto especial (se aplicável)"><RadioGroup options={OPC.estatuto} value={f.estatuto} onChange={(v) => set("estatuto", v)} accent={accent} /></Field>
-                  <Field label="1.4. Região / NUT III"><Select value={f.nuts} onChange={(v) => set("nuts", v)} options={NUTS_III} /></Field>
-                  <Field label="1.5. Distrito"><Select value={f.distrito} onChange={(v) => set("distrito", v)} options={DISTRITOS} /></Field>
-                  <Field label="1.6. Concelho" hint="Na versão final, a lista de concelhos filtra-se pelo distrito (308 concelhos, fonte oficial).">
+                  <Field label="1.4. Região / NUT III" required><Select value={f.nuts} onChange={(v) => set("nuts", v)} options={NUTS_III} /></Field>
+                  <Field label="1.5. Distrito" required><Select value={f.distrito} onChange={(v) => set("distrito", v)} options={DISTRITOS} /></Field>
+                  <Field label="1.6. Concelho" required hint="Na versão final, a lista de concelhos filtra-se pelo distrito (308 concelhos, fonte oficial).">
                     <TextInput value={f.concelho} onChange={(v) => set("concelho", v)} placeholder="Concelho" /></Field>
                   <Field label="1.7. Contacto(s) e morada da instituição">
                     <div style={s.subGrid}>
@@ -500,77 +542,83 @@ export default function App({ onVoltar }) {
                       <TextInput value={f.contacto.email} onChange={(v) => setNested("contacto", "email", v)} placeholder="E-mail institucional" type="email" />
                     </div>
                   </Field>
-                  <Field label="1.8. A escola tem Projeto Educativo que integre memória histórica, democracia ou cidadania?"><RadioGroup options={OPC.simNao} value={f.q18} onChange={(v) => set("q18", v)} accent={accent} /></Field>
-                  <Field label="1.9. Já houve iniciativas sobre o 25 de Abril na escola este ano letivo?"><RadioGroup options={OPC.simNao} value={f.q19} onChange={(v) => set("q19", v)} accent={accent} /></Field>
-                  <Field label="1.10. A escola já teve contacto com outros recursos do CD25A-UC?"><RadioGroup options={OPC.simNao} value={f.q110} onChange={(v) => set("q110", v)} accent={accent} /></Field>
-                  <Field label="1.11. A escola tem projetos ativos de cidadania ou memória histórica este ano?"><RadioGroup options={OPC.simNao} value={f.q111} onChange={(v) => set("q111", v)} accent={accent} /></Field>
+                  <Field label="1.8. A escola tem Projeto Educativo que integre memória histórica, democracia ou cidadania?" required><RadioGroup options={OPC.simNao} value={f.q18} onChange={(v) => set("q18", v)} accent={accent} /></Field>
+                  <Field label="1.9. Já houve iniciativas sobre o 25 de Abril na escola este ano letivo?" required><RadioGroup options={OPC.simNao} value={f.q19} onChange={(v) => set("q19", v)} accent={accent} /></Field>
+                  <Field label="1.10. A escola já teve contacto com outros recursos do CD25A-UC?" required><RadioGroup options={OPC.simNao} value={f.q110} onChange={(v) => set("q110", v)} accent={accent} /></Field>
+                  <Field label="1.11. A escola tem projetos ativos de cidadania ou memória histórica este ano?" required><RadioGroup options={OPC.simNao} value={f.q111} onChange={(v) => set("q111", v)} accent={accent} /></Field>
                 </Section>
               )}
 
               {/* ───── SECÇÃO 2 ───── */}
               {sec.id === "docente" && (
                 <Section titulo="Docente responsável" nota="Estes dados de contacto são necessários para gerir a requisição. (Validar o texto RGPD na versão final.)">
-                  <div style={s.subGrid}>
+                  <Field label="Nome completo" required>
                     <TextInput value={f.docente.nome} onChange={(v) => setNested("docente", "nome", v)} placeholder="Nome completo" />
+                  </Field>
+                  <Field label="Cargo / função">
                     <TextInput value={f.docente.cargo} onChange={(v) => setNested("docente", "cargo", v)} placeholder="Cargo / função" />
+                  </Field>
+                  <Field label="Telefone / telemóvel">
                     <TextInput value={f.docente.tel} onChange={(v) => setNested("docente", "tel", v)} placeholder="Telefone / telemóvel" />
+                  </Field>
+                  <Field label="E-mail" required>
                     <TextInput value={f.docente.email} onChange={(v) => setNested("docente", "email", v)} placeholder="E-mail" type="email" />
-                  </div>
+                  </Field>
                 </Section>
               )}
 
               {/* ───── SECÇÃO 3 (com condicionais) ───── */}
               {sec.id === "pedagogica" && (
                 <Section titulo="Informações pedagógicas">
-                  <Field label="3.1. Caracterização do grupo escolar">
+                  <Field label="3.1. Caracterização do grupo escolar" required hint="Indique pelo menos o número de discentes.">
                     <div style={s.subGrid}>
                       <TextInput value={f.grupo.anos} onChange={(v) => setNested("grupo", "anos", v)} placeholder="Ano(s) de escolaridade / ciclo" />
-                      <TextInput value={f.grupo.nDiscentes} onChange={(v) => setNested("grupo", "nDiscentes", v)} placeholder="N.º previsto de discentes" type="number" />
+                      <TextInput value={f.grupo.nDiscentes} onChange={(v) => setNested("grupo", "nDiscentes", v)} placeholder="N.º previsto de discentes *" type="number" />
                       <TextInput value={f.grupo.nTurmas} onChange={(v) => setNested("grupo", "nTurmas", v)} placeholder="N.º previsto de turmas" type="number" />
                       <TextInput value={f.grupo.nDocentes} onChange={(v) => setNested("grupo", "nDocentes", v)} placeholder="N.º de docentes acompanhantes" type="number" />
                     </div>
                   </Field>
-                  <Field label="3.2. O grupo inclui alunos/as com necessidades educativas especiais (NEE)?"><RadioGroup options={OPC.simNao} value={f.q32} onChange={(v) => set("q32", v)} accent={accent} /></Field>
-                  <Field label="3.3. Disciplina principal da requisição"><RadioGroup options={OPC.disciplinaPrincipal} value={f.disciplinaPrincipal} onChange={(v) => set("disciplinaPrincipal", v)} accent={accent} /></Field>
-                  <Field label="3.4. A exposição será integrada em:"><CheckGroup options={OPC.integradaEm} values={f.integradaEm} onChange={(v) => set("integradaEm", v)} accent={accent} /></Field>
-                  <Field label="3.5. A requisição enquadra-se nas Aprendizagens Essenciais (AE) de História?"><RadioGroup options={OPC.simNao} value={f.q35} onChange={(v) => set("q35", v)} accent={accent} /></Field>
+                  <Field label="3.2. O grupo inclui alunos/as com necessidades educativas especiais (NEE)?" required><RadioGroup options={OPC.simNao} value={f.q32} onChange={(v) => set("q32", v)} accent={accent} /></Field>
+                  <Field label="3.3. Disciplina principal da requisição" required><RadioGroup options={OPC.disciplinaPrincipal} value={f.disciplinaPrincipal} onChange={(v) => set("disciplinaPrincipal", v)} accent={accent} /></Field>
+                  <Field label="3.4. A exposição será integrada em:" required><CheckGroup options={OPC.integradaEm} values={f.integradaEm} onChange={(v) => set("integradaEm", v)} accent={accent} /></Field>
+                  <Field label="3.5. A requisição enquadra-se nas Aprendizagens Essenciais (AE) de História?" required><RadioGroup options={OPC.simNao} value={f.q35} onChange={(v) => set("q35", v)} accent={accent} /></Field>
                   {f.q35 === "Sim" && (
                     <Field label="3.6. Que domínios das AE de História pretende trabalhar?"><CheckGroup options={OPC.dominiosAE} values={f.dominiosAE} onChange={(v) => set("dominiosAE", v)} accent={accent} /></Field>
                   )}
-                  <Field label="3.7. Prevê articulação com outras disciplinas?"><RadioGroup options={OPC.simNao} value={f.q37} onChange={(v) => set("q37", v)} accent={accent} /></Field>
+                  <Field label="3.7. Prevê articulação com outras disciplinas?" required><RadioGroup options={OPC.simNao} value={f.q37} onChange={(v) => set("q37", v)} accent={accent} /></Field>
                   {f.q37 === "Sim" && (
                     <Field label="3.8. Com que disciplinas?"><CheckGroup options={OPC.disciplinasArtic} values={f.disciplinasArtic} onChange={(v) => set("disciplinasArtic", v)} accent={accent} /></Field>
                   )}
-                  <Field label="3.9. Pretende usar os materiais pedagógicos do CD25A-UC em sala de aula?"><RadioGroup options={OPC.simNao} value={f.q39} onChange={(v) => set("q39", v)} accent={accent} /></Field>
+                  <Field label="3.9. Pretende usar os materiais pedagógicos do CD25A-UC em sala de aula?" required><RadioGroup options={OPC.simNao} value={f.q39} onChange={(v) => set("q39", v)} accent={accent} /></Field>
                 </Section>
               )}
 
               {/* ───── SECÇÃO 4 ───── */}
               {sec.id === "objetivos" && (
                 <Section titulo="Objetivos e expectativas">
-                  <Field label="4.1. Objetivo principal da requisição"><RadioGroup options={OPC.objetivoPrincipal} value={f.objetivoPrincipal} onChange={(v) => set("objetivoPrincipal", v)} accent={accent} /></Field>
-                  <Field label="4.2. Competências a desenvolver nos/as discentes"><CheckGroup options={OPC.competencias} values={f.competencias} onChange={(v) => set("competencias", v)} accent={accent} /></Field>
+                  <Field label="4.1. Objetivo principal da requisição" required><RadioGroup options={OPC.objetivoPrincipal} value={f.objetivoPrincipal} onChange={(v) => set("objetivoPrincipal", v)} accent={accent} /></Field>
+                  <Field label="4.2. Competências a desenvolver nos/as discentes" required><CheckGroup options={OPC.competencias} values={f.competencias} onChange={(v) => set("competencias", v)} accent={accent} /></Field>
                   <Field label="4.3. Resultados de aprendizagem concretos que espera alcançar"><textarea value={f.q43 || ""} onChange={(e) => set("q43", e.target.value)} placeholder="Texto livre…" style={{ ...s.input, minHeight: 90, resize: "vertical", fontFamily: "inherit" }} /></Field>
-                  <Field label="4.4. Necessidades dos/as discentes a que espera dar resposta"><CheckGroup options={OPC.necessidades} values={f.necessidades} onChange={(v) => set("necessidades", v)} accent={accent} /></Field>
-                  <Field label="4.5. Impacto esperado nos/as discentes"><CheckGroup options={OPC.impacto} values={f.impacto} onChange={(v) => set("impacto", v)} accent={accent} /></Field>
-                  <Field label="4.6. Conhecimento prévio esperado"><CheckGroup options={OPC.conhecimentoPrevio} values={f.conhecimentoPrevio} onChange={(v) => set("conhecimentoPrevio", v)} accent={accent} /></Field>
+                  <Field label="4.4. Necessidades dos/as discentes a que espera dar resposta" required><CheckGroup options={OPC.necessidades} values={f.necessidades} onChange={(v) => set("necessidades", v)} accent={accent} /></Field>
+                  <Field label="4.5. Impacto esperado nos/as discentes" required><CheckGroup options={OPC.impacto} values={f.impacto} onChange={(v) => set("impacto", v)} accent={accent} /></Field>
+                  <Field label="4.6. Conhecimento prévio esperado" required><CheckGroup options={OPC.conhecimentoPrevio} values={f.conhecimentoPrevio} onChange={(v) => set("conhecimentoPrevio", v)} accent={accent} /></Field>
                 </Section>
               )}
 
               {/* ───── SECÇÃO 5 ───── */}
               {sec.id === "atividades" && (
                 <Section titulo="Atividades planeadas">
-                  <Field label="5.1. Está prevista uma atividade de preparação antes da exposição?"><RadioGroup options={OPC.simNao} value={f.q51} onChange={(v) => set("q51", v)} accent={accent} /></Field>
-                  <Field label="5.2. Está prevista uma atividade de seguimento ou avaliação depois?"><RadioGroup options={OPC.simNao} value={f.q52} onChange={(v) => set("q52", v)} accent={accent} /></Field>
+                  <Field label="5.1. Está prevista uma atividade de preparação antes da exposição?" required><RadioGroup options={OPC.simNao} value={f.q51} onChange={(v) => set("q51", v)} accent={accent} /></Field>
+                  <Field label="5.2. Está prevista uma atividade de seguimento ou avaliação depois?" required><RadioGroup options={OPC.simNao} value={f.q52} onChange={(v) => set("q52", v)} accent={accent} /></Field>
                 </Section>
               )}
 
               {/* ───── SECÇÃO 6 (com condicional) ───── */}
               {sec.id === "repositorio" && (
                 <Section titulo="Repositório digital e Kit Pedagógico">
-                  <Field label="6.1. Conhecia o repositório digital do CD25A-UC?"><RadioGroup options={OPC.simNao} value={f.q61} onChange={(v) => set("q61", v)} accent={accent} /></Field>
-                  <Field label="6.2. Tenciona aceder ao repositório no âmbito desta requisição?"><RadioGroup options={OPC.simNao} value={f.q62} onChange={(v) => set("q62", v)} accent={accent} /></Field>
-                  <Field label="6.3. Tenciona utilizar o kit pedagógico com os/as discentes?"><RadioGroup options={OPC.simNao} value={f.q63} onChange={(v) => set("q63", v)} accent={accent} /></Field>
+                  <Field label="6.1. Conhecia o repositório digital do CD25A-UC?" required><RadioGroup options={OPC.simNao} value={f.q61} onChange={(v) => set("q61", v)} accent={accent} /></Field>
+                  <Field label="6.2. Tenciona aceder ao repositório no âmbito desta requisição?" required><RadioGroup options={OPC.simNao} value={f.q62} onChange={(v) => set("q62", v)} accent={accent} /></Field>
+                  <Field label="6.3. Tenciona utilizar o kit pedagógico com os/as discentes?" required><RadioGroup options={OPC.simNao} value={f.q63} onChange={(v) => set("q63", v)} accent={accent} /></Field>
                   {f.q63 === "Sim" && (
                     <Field label="6.4. Que atividades do kit tenciona utilizar?"><CheckGroup options={OPC.atividadesKit} values={f.atividadesKit} onChange={(v) => set("atividadesKit", v)} accent={accent} /></Field>
                   )}
@@ -580,16 +628,16 @@ export default function App({ onVoltar }) {
               {/* ───── SECÇÃO 7 ───── */}
               {sec.id === "relacao" && (
                 <Section titulo="Relação com o CD25A-UC">
-                  <Field label="7.1. Como tomou conhecimento da exposição?"><RadioGroup options={OPC.comoConheceu} value={f.q71} onChange={(v) => set("q71", v)} accent={accent} /></Field>
-                  <Field label="7.2. A instituição já conhecia o CD25A-UC?"><RadioGroup options={OPC.simNao} value={f.q72} onChange={(v) => set("q72", v)} accent={accent} /></Field>
-                  <Field label="7.3. A escola já requisitou esta exposição anteriormente?"><RadioGroup options={OPC.simNao} value={f.q73} onChange={(v) => set("q73", v)} accent={accent} /></Field>
+                  <Field label="7.1. Como tomou conhecimento da exposição?" required><RadioGroup options={OPC.comoConheceu} value={f.q71} onChange={(v) => set("q71", v)} accent={accent} /></Field>
+                  <Field label="7.2. A instituição já conhecia o CD25A-UC?" required><RadioGroup options={OPC.simNao} value={f.q72} onChange={(v) => set("q72", v)} accent={accent} /></Field>
+                  <Field label="7.3. A escola já requisitou esta exposição anteriormente?" required><RadioGroup options={OPC.simNao} value={f.q73} onChange={(v) => set("q73", v)} accent={accent} /></Field>
                 </Section>
               )}
 
               {/* ───── SECÇÃO 8 — LOCAL + CALENDÁRIO ───── */}
               {sec.id === "datas" && (
                 <Section titulo="Local e datas pretendidas">
-                  <Field label="8.1. Onde quer receber a exposição?">
+                  <Field label="8.1. Onde quer receber a exposição?" required>
                     <div style={s.localRow}>
                       {[{ id: "coimbra", nome: "Coimbra", c: "#E5544B" }, { id: "evora", nome: "Évora", c: "#7C5CBF" }].map((c) => {
                         const active = local === c.id;
@@ -603,7 +651,7 @@ export default function App({ onVoltar }) {
                     </div>
                   </Field>
                   {local ? (
-                    <Field label="8.2. Selecione o período pretendido" hint="Fins de semana e feriados não contam como dias de visita.">
+                    <Field label="8.2. Selecione o período pretendido" required hint="Fins de semana e feriados não contam como dias de visita.">
                       <Calendario local={local} value={f.datas} onChange={(v) => set("datas", v)} accent={accent} />
                     </Field>
                   ) : <div style={s.placeholder}>Escolha o local para ver o calendário.</div>}
