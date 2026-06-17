@@ -52,7 +52,11 @@ const TABS = [
   { id: "sumario", label: "Sumário" },
   { id: "requisicoes", label: "Requisições" },
   { id: "analise", label: "Análise de dados" },
+  { id: "equipa", label: "Equipa" },
 ];
+
+const PAPEL_LABEL = { admin: "Administrador", coimbra: "Coimbra", evora: "Évora" };
+const PAPEL_COR   = { admin: "#B08968", coimbra: COIMBRA, evora: EVORA };
 
 const ESTADO_STYLES = {
   ativa:     { color: "#3A7D44", background: "#EAF3E8" },
@@ -125,6 +129,7 @@ export default function AreaReservada({ onVoltar }) {
         {tab === "sumario" && <Sumario />}
         {tab === "requisicoes" && <Requisicoes />}
         {tab === "analise" && <Analise />}
+        {tab === "equipa" && <Equipa userId={sessao.user.id} userEmail={sessao.user.email} />}
       </div>
     </div>
   );
@@ -631,6 +636,162 @@ function Filtro({ label, value, onChange, options }) {
 }
 
 // ════════════════════════════════════════════════════════════
+//  EQUIPA — perfis + convites
+// ════════════════════════════════════════════════════════════
+function Equipa({ userId, userEmail }) {
+  const [perfil, setPerfil] = useState(null);
+  const [form, setForm] = useState({ nome: "", cargo: "", telemovel: "" });
+  const [guardando, setGuardando] = useState(false);
+  const [guardadoOk, setGuardadoOk] = useState(false);
+  const [erroGuardar, setErroGuardar] = useState(null);
+  const [membros, setMembros] = useState(null);
+  const [mudandoPapel, setMudandoPapel] = useState(null);
+
+  // Carrega o perfil do utilizador atual (e cria-o se não existir)
+  useEffect(() => {
+    supabase.from("perfis").select("*").eq("id", userId).maybeSingle()
+      .then(async ({ data }) => {
+        if (!data) {
+          // Primeiro login — cria perfil base
+          const { data: novo } = await supabase.from("perfis")
+            .insert({ id: userId, nome: userEmail.split("@")[0], email: userEmail })
+            .select().single();
+          if (novo) { setPerfil(novo); setForm({ nome: novo.nome, cargo: novo.cargo ?? "", telemovel: novo.telemovel ?? "" }); }
+        } else {
+          setPerfil(data);
+          setForm({ nome: data.nome ?? "", cargo: data.cargo ?? "", telemovel: data.telemovel ?? "" });
+        }
+      });
+  }, [userId, userEmail]);
+
+  // Se admin, carrega lista de todos os membros
+  useEffect(() => {
+    if (perfil?.papel !== "admin") return;
+    supabase.from("perfis").select("*").order("criado_em")
+      .then(({ data }) => setMembros(data ?? []));
+  }, [perfil?.papel]);
+
+  async function guardarPerfil(e) {
+    e.preventDefault();
+    setGuardando(true); setErroGuardar(null); setGuardadoOk(false);
+    const { error } = await supabase.from("perfis")
+      .update({ nome: form.nome.trim(), cargo: form.cargo.trim(), telemovel: form.telemovel.trim() })
+      .eq("id", userId);
+    setGuardando(false);
+    if (error) setErroGuardar("Não foi possível guardar. Tente novamente.");
+    else { setGuardadoOk(true); setPerfil(p => ({ ...p, ...form })); setTimeout(() => setGuardadoOk(false), 3000); }
+  }
+
+  async function mudarPapel(membroId, novoPapel) {
+    setMudandoPapel(membroId);
+    await supabase.from("perfis").update({ papel: novoPapel }).eq("id", membroId);
+    setMembros(prev => prev.map(m => m.id === membroId ? { ...m, papel: novoPapel } : m));
+    setMudandoPapel(null);
+  }
+
+  return (
+    <div>
+      {/* ── Perfil do utilizador atual ── */}
+      <h2 style={s.h2}>O meu perfil</h2>
+      <p style={s.lead}>Estas informações identificam-te na plataforma e serão usadas nos e-mails enviados às escolas.</p>
+
+      {!perfil ? (
+        <div style={s.loadingRow}>A carregar perfil…</div>
+      ) : (
+        <form onSubmit={guardarPerfil} style={s.perfilCard}>
+          <div style={s.perfilGrid}>
+            <div style={s.perfilField}>
+              <label style={s.filtroLabel}>Nome completo</label>
+              <input style={s.inputInline} value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} placeholder="Nome completo" required />
+            </div>
+            <div style={s.perfilField}>
+              <label style={s.filtroLabel}>Cargo / função</label>
+              <input style={s.inputInline} value={form.cargo} onChange={e => setForm(p => ({ ...p, cargo: e.target.value }))} placeholder="Ex.: Responsável de Coimbra" />
+            </div>
+            <div style={s.perfilField}>
+              <label style={s.filtroLabel}>Telemóvel</label>
+              <input style={s.inputInline} value={form.telemovel} onChange={e => setForm(p => ({ ...p, telemovel: e.target.value }))} placeholder="+351 9xx xxx xxx" />
+            </div>
+            <div style={s.perfilField}>
+              <label style={s.filtroLabel}>E-mail</label>
+              <input style={{ ...s.inputInline, background: "#F4F0E8", color: "#8A847B" }} value={userEmail} disabled />
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+            <span style={{ ...s.estadoTag, background: PAPEL_COR[perfil.papel] + "18", color: PAPEL_COR[perfil.papel] }}>
+              {PAPEL_LABEL[perfil.papel]}
+            </span>
+            <button type="submit" style={s.btnPrimary} disabled={guardando}>
+              {guardando ? "A guardar…" : "Guardar"}
+            </button>
+            {guardadoOk && <span style={{ fontSize: 13, color: "#3A7D44" }}>✓ Guardado</span>}
+            {erroGuardar && <span style={{ fontSize: 13, color: "#B3261E" }}>{erroGuardar}</span>}
+          </div>
+        </form>
+      )}
+
+      {/* ── Lista de membros (só admins) ── */}
+      {perfil?.papel === "admin" && (
+        <>
+          <h2 style={{ ...s.h2, marginTop: 36 }}>Membros da equipa</h2>
+          <p style={s.lead}>Aqui podes ver todos os membros e alterar o seu papel na plataforma.</p>
+          {membros === null ? (
+            <div style={s.loadingRow}>A carregar membros…</div>
+          ) : (
+            <div style={s.tableWrap}>
+              <div style={{ ...s.tableHead, gridTemplateColumns: "2fr 1.5fr 1fr 1.2fr" }}>
+                <span>Nome</span><span>E-mail</span><span>Telemóvel</span><span>Papel</span>
+              </div>
+              {membros.map(m => (
+                <div key={m.id} style={{ ...s.tableRow, display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1.2fr", alignItems: "center" }}>
+                  <span style={{ fontWeight: 500 }}>{m.nome || "—"}</span>
+                  <span style={{ fontSize: 13, color: "#6B655C" }}>{m.email}</span>
+                  <span style={{ fontSize: 13, color: "#6B655C" }}>{m.telemovel || "—"}</span>
+                  <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {["admin", "coimbra", "evora"].map(p => (
+                      <button key={p} disabled={mudandoPapel === m.id} onClick={() => mudarPapel(m.id, p)}
+                        style={{ ...s.estadoTag, cursor: "pointer", border: "none", fontFamily: "inherit",
+                          background: m.papel === p ? PAPEL_COR[p] + "18" : "#F4F0E8",
+                          color: m.papel === p ? PAPEL_COR[p] : "#9A948B",
+                          fontWeight: m.papel === p ? 700 : 400 }}>
+                        {PAPEL_LABEL[p]}
+                      </button>
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Convidar novo membro ── */}
+      {perfil?.papel === "admin" && (
+        <div style={s.conviteCard}>
+          <div style={s.conviteTitulo}>Convidar novo membro</div>
+          <p style={s.conviteTexto}>
+            Para adicionar um novo membro à equipa, acede ao painel do Supabase e convida o utilizador por e-mail.
+            O registo público está desativado — só quem receber o convite pode criar conta.
+          </p>
+          <ol style={{ margin: "10px 0 0", paddingLeft: 20, fontSize: 13.5, lineHeight: 2, color: "#54504A" }}>
+            <li>Abre o painel do Supabase</li>
+            <li>Vai a <strong>Authentication → Users</strong></li>
+            <li>Clica em <strong>Invite user</strong> e introduz o e-mail</li>
+            <li>O novo membro recebe um e-mail com o link para definir a palavra-passe</li>
+            <li>Volta aqui e atribui o papel correto (Coimbra / Évora / Administrador)</li>
+          </ol>
+        </div>
+      )}
+      {perfil?.papel !== "admin" && (
+        <p style={{ ...s.lead, marginTop: 32, fontSize: 13, color: "#A8A299" }}>
+          Para gerir membros ou convidar alguém, contacta o/a administrador/a da plataforma.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 //  GLOBAL CSS
 // ════════════════════════════════════════════════════════════
 const globalCSS = `
@@ -744,6 +905,15 @@ const s = {
   crossSelectors: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
   varSelectSm: { flex: 1, minWidth: 200, padding: "9px 12px", border: "1.5px solid #E4E1DA", borderRadius: 9, background: "#FBFAF7", fontSize: 13, color: "#6B655C" },
   crossX: { fontWeight: 700, color: "#B08968", fontSize: 16 },
+  // ── equipa ──
+  perfilCard: { background: "#fff", border: "1px solid #ECE8E1", borderRadius: 16, padding: "24px 26px", marginBottom: 8 },
+  perfilGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" },
+  perfilField: { display: "flex", flexDirection: "column", gap: 6 },
+  inputInline: { padding: "10px 13px", border: "1.5px solid #E4E1DA", borderRadius: 10, fontSize: 14, fontFamily: "inherit", color: "#2B2723", outline: "none", transition: "border-color .15s" },
+  btnPrimary: { padding: "10px 22px", border: "none", borderRadius: 10, background: "#2B2723", color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" },
+  conviteCard: { marginTop: 28, background: "#FBF9F4", border: "1px solid #EFE9DD", borderRadius: 16, padding: "22px 26px" },
+  conviteTitulo: { fontFamily: "'Fraunces',serif", fontSize: 17, fontWeight: 600, marginBottom: 8, color: "#2B2723" },
+  conviteTexto: { fontSize: 13.5, color: "#6B655C", lineHeight: 1.6, margin: 0 },
   // ── shared ──
   input: { width: "100%", padding: "12px 14px", border: "1.5px solid #E4E1DA", borderRadius: 11, fontSize: 14.5, fontFamily: "inherit", color: "#2B2723", marginBottom: 12, outline: "none", transition: "border-color .15s" },
 };
