@@ -46,7 +46,7 @@ const BG_SLIDES = [
 
 const FADE_INTERVAL = 7000; // 6s por imagem
 
-export default function Homepage({ onRequisitar, onAvaliar, onAreaReservada }) {
+export default function Homepage({ onRequisitar, onAvaliar, onSair, perfil }) {
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
@@ -88,11 +88,12 @@ export default function Homepage({ onRequisitar, onAvaliar, onAreaReservada }) {
         <div style={s.bgScrim} aria-hidden="true" />
       </div>
 
-      {/* ───── TOPO: área reservada ───── */}
+      {/* ───── TOPO: utilizador autenticado ───── */}
       <header style={s.topbar}>
         <div style={s.topbarInner}>
-          <button type="button" className="login-link" style={s.loginLink} onClick={onAreaReservada}>
-            Área reservada
+          {perfil?.nome && <span style={s.userName}>Olá, {perfil.nome.split(" ")[0]}</span>}
+          <button type="button" className="login-link" style={s.loginLink} onClick={onSair}>
+            Sair
           </button>
         </div>
       </header>
@@ -174,7 +175,8 @@ const s = {
   bgScrim: { position: "absolute", inset: 0, background: "linear-gradient(180deg, #00000078 0%, #00000052 40%, #0000008c 100%)" },
   // topo
   topbar: { position: "relative", zIndex: 2, padding: "20px 24px" },
-  topbarInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end" },
+  topbarInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 14 },
+  userName: { fontSize: 13.5, fontWeight: 500, color: "#ffffffdd", textShadow: "0 1px 8px #0006" },
   topbarBrand: { fontFamily: "'Fraunces',serif", fontWeight: 600, fontSize: 17, letterSpacing: ".02em", textShadow: "0 1px 8px #0006" },
   loginLink: { display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 99, border: "1px solid #ffffff33", background: "#ffffff12", backdropFilter: "blur(8px)", color: "#fff", fontSize: 13.5, fontWeight: 500, fontFamily: "inherit", cursor: "pointer" },
   lockIcon: { fontSize: 14, opacity: 0.9 },

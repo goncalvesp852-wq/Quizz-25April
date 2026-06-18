@@ -58,6 +58,10 @@ const TABS = [
 const PAPEL_LABEL = { admin: "Administrador", coimbra: "Coimbra", evora: "Évora" };
 const PAPEL_COR   = { admin: "#B08968", coimbra: COIMBRA, evora: EVORA };
 
+// Tipos de perfil (tabela tipo_perfil): 1 utilizador · 2 admin Évora
+// · 3 visitante Coimbra · 4 admin Coimbra.
+const TIPO_LABEL = { 1: "Utilizador", 2: "Admin Évora", 3: "Visitante Coimbra", 4: "Admin Coimbra" };
+
 const ESTADO_STYLES = {
   ativa:     { color: "#3A7D44", background: "#EAF3E8" },
   concluida: { color: "#6B655C", background: "#F4F0E8" },
@@ -67,39 +71,8 @@ const ESTADO_STYLES = {
 // ════════════════════════════════════════════════════════════
 //  ROOT COMPONENT
 // ════════════════════════════════════════════════════════════
-export default function AreaReservada({ onVoltar }) {
-  const [sessao, setSessao] = useState(null);
-  const [verificando, setVerificando] = useState(true);
+export default function AreaReservada({ perfil, onSair }) {
   const [tab, setTab] = useState("sumario");
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSessao(session);
-      setVerificando(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
-      setSessao(session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function handleSair() {
-    await supabase.auth.signOut();
-    onVoltar?.();
-  }
-
-  if (verificando) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FBFAF7", fontFamily: "'Inter',system-ui,sans-serif", color: "#9A948B", fontSize: 15 }}>
-        <style>{globalCSS}</style>
-        A verificar sessão…
-      </div>
-    );
-  }
-
-  if (!sessao) {
-    return <LoginForm onVoltar={onVoltar} onSessao={setSessao} />;
-  }
 
   return (
     <div style={s.page}>
@@ -110,12 +83,12 @@ export default function AreaReservada({ onVoltar }) {
             <img src={LOGO_CRAVO} alt="" style={s.brandLogo} />
             <div>
               <div style={s.brandTitle}>Área reservada</div>
-              <div style={s.brandSub}>Equipa CD25A · {sessao.user.email}</div>
+              <div style={s.brandSub}>Equipa CD25A · {perfil.mail}</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button style={{ ...s.sairBtn, background: "transparent", color: "#8A847B", border: "1px solid #DDD8CF" }} onClick={() => onVoltar?.()}>← Início</button>
-            <button style={s.sairBtn} onClick={handleSair}>Sair</button>
+            <span style={{ ...s.estadoTag, background: "#F4F0E8", color: "#8A847B" }}>{TIPO_LABEL[perfil.tipo_perfil] || "Equipa"}</span>
+            <button style={s.sairBtn} onClick={onSair}>Sair</button>
           </div>
         </header>
         <nav style={s.tabs}>
@@ -129,70 +102,8 @@ export default function AreaReservada({ onVoltar }) {
         {tab === "sumario" && <Sumario />}
         {tab === "requisicoes" && <Requisicoes />}
         {tab === "analise" && <Analise />}
-        {tab === "equipa" && <Equipa userId={sessao.user.id} userEmail={sessao.user.email} />}
+        {tab === "equipa" && <Equipa perfil={perfil} />}
       </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-//  LOGIN FORM
-// ════════════════════════════════════════════════════════════
-function LoginForm({ onVoltar, onSessao }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [erro, setErro] = useState("");
-  const [carregando, setCarregando] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setErro("");
-    setCarregando(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    setCarregando(false);
-    if (error) {
-      setErro("E-mail ou palavra-passe incorretos.");
-    } else {
-      onSessao(data.session);
-    }
-  }
-
-  return (
-    <div style={s.loginPage}>
-      <style>{globalCSS}</style>
-      <div style={s.loginBgImg} />
-      <div style={s.loginScrim} />
-      <form style={s.loginCard} onSubmit={handleSubmit}>
-        <img src={LOGO_CRAVO} alt="" style={s.loginLogo} />
-        <div style={s.loginEyebrow}>Área reservada</div>
-        <h1 style={s.loginTitle}>Equipa CD25A</h1>
-        <p style={s.loginSub}>Gestão de requisições e análise de dados da exposição.</p>
-        <input
-          style={s.input}
-          type="email"
-          placeholder="E-mail institucional"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-        />
-        <input
-          style={s.input}
-          type="password"
-          placeholder="Palavra-passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
-        {erro && <p style={s.loginErro}>{erro}</p>}
-        <button style={{ ...s.loginBtn, opacity: carregando ? 0.7 : 1 }} type="submit" disabled={carregando}>
-          {carregando ? "A entrar…" : "Entrar"}
-        </button>
-        <button type="button" onClick={() => onVoltar?.()} style={{ background: "none", border: "none", color: "#8A847B", fontSize: 13, cursor: "pointer", marginTop: 12, fontFamily: "inherit" }}>
-          ← Voltar ao site
-        </button>
-      </form>
     </div>
   );
 }
@@ -638,155 +549,37 @@ function Filtro({ label, value, onChange, options }) {
 // ════════════════════════════════════════════════════════════
 //  EQUIPA — perfis + convites
 // ════════════════════════════════════════════════════════════
-function Equipa({ userId, userEmail }) {
-  const [perfil, setPerfil] = useState(null);
-  const [form, setForm] = useState({ nome: "", cargo: "", telemovel: "" });
-  const [guardando, setGuardando] = useState(false);
-  const [guardadoOk, setGuardadoOk] = useState(false);
-  const [erroGuardar, setErroGuardar] = useState(null);
-  const [membros, setMembros] = useState(null);
-  const [mudandoPapel, setMudandoPapel] = useState(null);
-
-  // Carrega o perfil do utilizador atual (e cria-o se não existir)
-  useEffect(() => {
-    supabase.from("perfis").select("*").eq("id", userId).maybeSingle()
-      .then(async ({ data }) => {
-        if (!data) {
-          // Primeiro login — cria perfil base
-          const { data: novo } = await supabase.from("perfis")
-            .insert({ id: userId, nome: userEmail.split("@")[0], email: userEmail })
-            .select().single();
-          if (novo) { setPerfil(novo); setForm({ nome: novo.nome, cargo: novo.cargo ?? "", telemovel: novo.telemovel ?? "" }); }
-        } else {
-          setPerfil(data);
-          setForm({ nome: data.nome ?? "", cargo: data.cargo ?? "", telemovel: data.telemovel ?? "" });
-        }
-      });
-  }, [userId, userEmail]);
-
-  // Se admin, carrega lista de todos os membros
-  useEffect(() => {
-    if (perfil?.papel !== "admin") return;
-    supabase.from("perfis").select("*").order("criado_em")
-      .then(({ data }) => setMembros(data ?? []));
-  }, [perfil?.papel]);
-
-  async function guardarPerfil(e) {
-    e.preventDefault();
-    setGuardando(true); setErroGuardar(null); setGuardadoOk(false);
-    const { error } = await supabase.from("perfis")
-      .update({ nome: form.nome.trim(), cargo: form.cargo.trim(), telemovel: form.telemovel.trim() })
-      .eq("id", userId);
-    setGuardando(false);
-    if (error) setErroGuardar("Não foi possível guardar. Tente novamente.");
-    else { setGuardadoOk(true); setPerfil(p => ({ ...p, ...form })); setTimeout(() => setGuardadoOk(false), 3000); }
-  }
-
-  async function mudarPapel(membroId, novoPapel) {
-    setMudandoPapel(membroId);
-    await supabase.from("perfis").update({ papel: novoPapel }).eq("id", membroId);
-    setMembros(prev => prev.map(m => m.id === membroId ? { ...m, papel: novoPapel } : m));
-    setMudandoPapel(null);
-  }
-
+function Equipa({ perfil }) {
   return (
     <div>
       {/* ── Perfil do utilizador atual ── */}
       <h2 style={s.h2}>O meu perfil</h2>
-      <p style={s.lead}>Estas informações identificam-te na plataforma e serão usadas nos e-mails enviados às escolas.</p>
+      <p style={s.lead}>Dados da conta com que iniciaste sessão na plataforma.</p>
 
-      {!perfil ? (
-        <div style={s.loadingRow}>A carregar perfil…</div>
-      ) : (
-        <form onSubmit={guardarPerfil} style={s.perfilCard}>
-          <div style={s.perfilGrid}>
-            <div style={s.perfilField}>
-              <label style={s.filtroLabel}>Nome completo</label>
-              <input style={s.inputInline} value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} placeholder="Nome completo" required />
-            </div>
-            <div style={s.perfilField}>
-              <label style={s.filtroLabel}>Cargo / função</label>
-              <input style={s.inputInline} value={form.cargo} onChange={e => setForm(p => ({ ...p, cargo: e.target.value }))} placeholder="Ex.: Responsável de Coimbra" />
-            </div>
-            <div style={s.perfilField}>
-              <label style={s.filtroLabel}>Telemóvel</label>
-              <input style={s.inputInline} value={form.telemovel} onChange={e => setForm(p => ({ ...p, telemovel: e.target.value }))} placeholder="+351 9xx xxx xxx" />
-            </div>
-            <div style={s.perfilField}>
-              <label style={s.filtroLabel}>E-mail</label>
-              <input style={{ ...s.inputInline, background: "#F4F0E8", color: "#8A847B" }} value={userEmail} disabled />
-            </div>
+      <div style={s.perfilCard}>
+        <div style={s.perfilGrid}>
+          <div style={s.perfilField}>
+            <label style={s.filtroLabel}>Nome</label>
+            <input style={{ ...s.inputInline, background: "#F4F0E8", color: "#54504A" }} value={perfil.nome || "—"} disabled />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
-            <span style={{ ...s.estadoTag, background: PAPEL_COR[perfil.papel] + "18", color: PAPEL_COR[perfil.papel] }}>
-              {PAPEL_LABEL[perfil.papel]}
-            </span>
-            <button type="submit" style={s.btnPrimary} disabled={guardando}>
-              {guardando ? "A guardar…" : "Guardar"}
-            </button>
-            {guardadoOk && <span style={{ fontSize: 13, color: "#3A7D44" }}>✓ Guardado</span>}
-            {erroGuardar && <span style={{ fontSize: 13, color: "#B3261E" }}>{erroGuardar}</span>}
+          <div style={s.perfilField}>
+            <label style={s.filtroLabel}>E-mail</label>
+            <input style={{ ...s.inputInline, background: "#F4F0E8", color: "#54504A" }} value={perfil.mail || "—"} disabled />
           </div>
-        </form>
-      )}
-
-      {/* ── Lista de membros (só admins) ── */}
-      {perfil?.papel === "admin" && (
-        <>
-          <h2 style={{ ...s.h2, marginTop: 36 }}>Membros da equipa</h2>
-          <p style={s.lead}>Aqui podes ver todos os membros e alterar o seu papel na plataforma.</p>
-          {membros === null ? (
-            <div style={s.loadingRow}>A carregar membros…</div>
-          ) : (
-            <div style={s.tableWrap}>
-              <div style={{ ...s.tableHead, gridTemplateColumns: "2fr 1.5fr 1fr 1.2fr" }}>
-                <span>Nome</span><span>E-mail</span><span>Telemóvel</span><span>Papel</span>
-              </div>
-              {membros.map(m => (
-                <div key={m.id} style={{ ...s.tableRow, display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1.2fr", alignItems: "center" }}>
-                  <span style={{ fontWeight: 500 }}>{m.nome || "—"}</span>
-                  <span style={{ fontSize: 13, color: "#6B655C" }}>{m.email}</span>
-                  <span style={{ fontSize: 13, color: "#6B655C" }}>{m.telemovel || "—"}</span>
-                  <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {["admin", "coimbra", "evora"].map(p => (
-                      <button key={p} disabled={mudandoPapel === m.id} onClick={() => mudarPapel(m.id, p)}
-                        style={{ ...s.estadoTag, cursor: "pointer", border: "none", fontFamily: "inherit",
-                          background: m.papel === p ? PAPEL_COR[p] + "18" : "#F4F0E8",
-                          color: m.papel === p ? PAPEL_COR[p] : "#9A948B",
-                          fontWeight: m.papel === p ? 700 : 400 }}>
-                        {PAPEL_LABEL[p]}
-                      </button>
-                    ))}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ── Convidar novo membro ── */}
-      {perfil?.papel === "admin" && (
-        <div style={s.conviteCard}>
-          <div style={s.conviteTitulo}>Convidar novo membro</div>
-          <p style={s.conviteTexto}>
-            Para adicionar um novo membro à equipa, acede ao painel do Supabase e convida o utilizador por e-mail.
-            O registo público está desativado — só quem receber o convite pode criar conta.
-          </p>
-          <ol style={{ margin: "10px 0 0", paddingLeft: 20, fontSize: 13.5, lineHeight: 2, color: "#54504A" }}>
-            <li>Abre o painel do Supabase</li>
-            <li>Vai a <strong>Authentication → Users</strong></li>
-            <li>Clica em <strong>Invite user</strong> e introduz o e-mail</li>
-            <li>O novo membro recebe um e-mail com o link para definir a palavra-passe</li>
-            <li>Volta aqui e atribui o papel correto (Coimbra / Évora / Administrador)</li>
-          </ol>
+          <div style={s.perfilField}>
+            <label style={s.filtroLabel}>Telemóvel</label>
+            <input style={{ ...s.inputInline, background: "#F4F0E8", color: "#54504A" }} value={perfil.telemovel || "—"} disabled />
+          </div>
+          <div style={s.perfilField}>
+            <label style={s.filtroLabel}>Tipo de perfil</label>
+            <input style={{ ...s.inputInline, background: "#F4F0E8", color: "#54504A" }} value={TIPO_LABEL[perfil.tipo_perfil] || `Tipo ${perfil.tipo_perfil}`} disabled />
+          </div>
         </div>
-      )}
-      {perfil?.papel !== "admin" && (
-        <p style={{ ...s.lead, marginTop: 32, fontSize: 13, color: "#A8A299" }}>
-          Para gerir membros ou convidar alguém, contacta o/a administrador/a da plataforma.
-        </p>
-      )}
+      </div>
+
+      <p style={{ ...s.lead, marginTop: 28, fontSize: 13, color: "#A8A299" }}>
+        A gestão de membros e a edição de perfis serão adicionadas numa próxima fase.
+      </p>
     </div>
   );
 }

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
+import Entrada from "./pages/Entrada.jsx";
 import Homepage from "./pages/Homepage.jsx";
 import Requisicao from "./pages/Requisicao.jsx";
 import Avaliacao from "./pages/Avaliacao.jsx";
 import AreaReservada from "./pages/AreaReservada.jsx";
+import { getSessao, logout, ehAdmin } from "./lib/auth.js";
 
-const PAGES = ["home", "requisicao", "avaliacao", "reservada"];
+const PAGES = ["home", "requisicao", "avaliacao"];
 
 function pageFromPath() {
   const path = window.location.pathname.replace(/^\//, "") || "home";
@@ -12,6 +14,7 @@ function pageFromPath() {
 }
 
 export default function App() {
+  const [perfil, setPerfil] = useState(getSessao);
   const [page, setPage] = useState(pageFromPath);
 
   // Sincroniza a URL quando a página muda (navegação interna)
@@ -30,22 +33,43 @@ export default function App() {
       window.scrollTo(0, 0);
     }
     window.addEventListener("popstate", onPop);
-    // Regista o estado inicial para que o primeiro popstate funcione
     window.history.replaceState({ page }, "", window.location.pathname);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   const goHome = () => navigate("home");
 
+  // ── Autenticação ──────────────────────────────────────────
+  function handleAutenticado(p) {
+    setPerfil(p);
+    navigate("home");
+  }
+  function handleSair() {
+    logout();
+    setPerfil(null);
+    navigate("home");
+  }
+
+  // 1) Sem sessão → página de entrada (iniciar sessão / criar conta)
+  if (!perfil) {
+    return <Entrada onAutenticado={handleAutenticado} />;
+  }
+
+  // 2) Equipa / gestão (tipo_perfil 2, 3, 4) → painel de gestão direto
+  if (ehAdmin(perfil)) {
+    return <AreaReservada perfil={perfil} onSair={handleSair} />;
+  }
+
+  // 3) Utilizador normal (tipo_perfil 1) → site público "25 de Abril em 3D"
   if (page === "requisicao") return <Requisicao onVoltar={goHome} />;
   if (page === "avaliacao")  return <Avaliacao  onVoltar={goHome} />;
-  if (page === "reservada")  return <AreaReservada onVoltar={goHome} />;
 
   return (
     <Homepage
+      perfil={perfil}
       onRequisitar={() => navigate("requisicao")}
       onAvaliar={() => navigate("avaliacao")}
-      onAreaReservada={() => navigate("reservada")}
+      onSair={handleSair}
     />
   );
 }
