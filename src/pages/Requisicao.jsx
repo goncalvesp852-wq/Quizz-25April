@@ -386,9 +386,10 @@ export default function App({ onVoltar }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [codigoGerado, setCodigoGerado] = useState(null);
+  const [submitKey, setSubmitKey] = useState(0);
 
   useEffect(() => {
-    if (!isDone || phase !== "form" || codigoGerado || submitting) return;
+    if (!isDone || phase !== "form" || codigoGerado) return;
 
     const { contacto = {}, docente = {}, datas, nomeEscola, tipoEstab, nuts, distrito, concelho,
       local, integradaEm, dominiosAE, disciplinasArtic, competencias, necessidades, impacto,
@@ -428,7 +429,7 @@ export default function App({ onVoltar }) {
         else { setCodigoGerado(data); }
       })
       .finally(() => setSubmitting(false));
-  }, [isDone, phase]);
+  }, [isDone, phase, submitKey]);
 
   return (
     <div style={s.page}>
@@ -691,7 +692,7 @@ export default function App({ onVoltar }) {
                 <h2 style={s.confirmTitle}>Erro ao submeter</h2>
                 <p style={s.confirmText}>{submitError}</p>
                 <div style={{ textAlign: "center" }}>
-                  <button type="button" onClick={() => { setSubmitError(null); setCodigoGerado(null); }} style={{ ...s.btnPrimary, background: accent }}>Tentar novamente</button>
+                  <button type="button" onClick={() => { setSubmitError(null); setCodigoGerado(null); setSubmitKey(k => k + 1); }} style={{ ...s.btnPrimary, background: accent }}>Tentar novamente</button>
                 </div>
               </>
             ) : codigoGerado ? (
