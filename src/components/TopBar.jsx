@@ -1,6 +1,6 @@
 const LOGO_CRAVO = "/images/logo_cravo.png";
 
-export default function TopBar({ onVoltar, label = "← Início" }) {
+export default function TopBar({ onVoltar, label = "Início" }) {
   return (
     <div style={s.bar}>
       <div style={s.inner}>
