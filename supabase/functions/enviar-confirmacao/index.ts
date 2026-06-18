@@ -66,13 +66,6 @@ function emailDocente(req: Record<string, unknown>, membro: Record<string, strin
       A requisição da exposição <strong>«25 de Abril em 3D: Democratizar, Descolonizar, Desenvolver»</strong>
       para <strong>${req.nome_escola}</strong> foi registada com sucesso.
     </p>
-    <!-- caixa do código -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px">
-    <tr><td style="background:#F4F0E8;border-radius:14px;padding:24px;text-align:center">
-      <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8A847B;margin-bottom:10px">Código da requisição</div>
-      <div style="font-size:32px;font-weight:800;color:${cor};letter-spacing:.04em">${req.codigo}</div>
-      <div style="font-size:13px;color:#8A847B;margin-top:10px">Guarde este código — vai precisar dele para avaliar a exposição no final.</div>
-    </td></tr></table>
     <!-- detalhes -->
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 24px;font-size:14px">
       <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;color:#8A847B;width:35%">Local</td><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;font-weight:600">${localNome}</td></tr>
@@ -110,7 +103,7 @@ function emailEquipa(req: Record<string, unknown>): string {
   </td></tr>
   <tr><td style="padding:32px 40px;color:#2B2723">
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;margin-bottom:28px">
-      <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;color:#8A847B;width:35%">Código</td><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;font-weight:700;color:${cor}">${req.codigo}</td></tr>
+      <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;color:#8A847B;width:35%">Requisição</td><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;font-weight:700;color:${cor}">#${req.id}</td></tr>
       <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;color:#8A847B">Escola</td><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;font-weight:600">${req.nome_escola}</td></tr>
       <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;color:#8A847B">Docente</td><td style="padding:10px 0;border-bottom:1px solid #F0ECE4">${req.docente_nome}<br><a href="mailto:${req.docente_email}" style="color:${cor};font-size:13px">${req.docente_email}</a>${req.docente_tel ? `<span style="color:#8A847B;font-size:13px"> · ${req.docente_tel}</span>` : ""}</td></tr>
       <tr><td style="padding:10px 0;border-bottom:1px solid #F0ECE4;color:#8A847B">Período</td><td style="padding:10px 0;border-bottom:1px solid #F0ECE4">${fmtData(req.data_inicio as string)} — ${fmtData(req.data_fim as string)}</td></tr>
@@ -159,13 +152,13 @@ Deno.serve(async (req) => {
     await Promise.all([
       enviarEmail(
         requisicao.docente_email,
-        `Requisição confirmada — ${requisicao.codigo} — 25 de Abril em 3D`,
+        `Requisição confirmada — #${requisicao.id} — 25 de Abril em 3D`,
         emailDocente(requisicao, membro),
       ),
       membro
         ? enviarEmail(
             membro.email,
-            `Nova requisição — ${requisicao.codigo} — ${requisicao.nome_escola}`,
+            `Nova requisição — #${requisicao.id} — ${requisicao.nome_escola}`,
             emailEquipa(requisicao),
           )
         : Promise.resolve(),

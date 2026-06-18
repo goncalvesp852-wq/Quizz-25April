@@ -114,7 +114,7 @@ export default function Homepage({ onRequisitar, onAvaliar, onSair, perfil }) {
             Avaliar a exposição
           </button>
         </div>
-        <p style={s.heroHint}>Para aceder à avaliação, deverá indicar o código de requisição recebido por e-mail.</p>
+        <p style={s.heroHint}>Para avaliar, escolha a requisição na lista de avaliações disponíveis na sua área.</p>
       </main>
 
       {/* ───── RODAPÉ ───── */}

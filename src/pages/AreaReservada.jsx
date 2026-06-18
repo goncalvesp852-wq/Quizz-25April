@@ -292,7 +292,7 @@ function Requisicoes() {
           <span style={{ flex: 0.9 }}>Local</span>
           <span style={{ flex: 1.4 }}>Datas</span>
           <span style={{ flex: 0.9 }}>Estado</span>
-          <span style={{ flex: 1.2 }}>Código</span>
+          <span style={{ flex: 1.2 }}>ID</span>
         </div>
         {requisicoes === null ? (
           <div style={{ padding: "20px 20px", color: "#C8C2BA", fontSize: 14 }}>A carregar…</div>
@@ -319,7 +319,7 @@ function Requisicoes() {
                   <span style={{ flex: 0.9 }}>
                     <span style={{ ...s.estadoBadge, ...estStyle }}>{r.estado || "—"}</span>
                   </span>
-                  <span style={{ flex: 1.2, color: "#9A948B", fontSize: 12.5 }}>{r.codigo || "—"}</span>
+                  <span style={{ flex: 1.2, color: "#9A948B", fontSize: 12.5 }}>#{r.id}</span>
                 </div>
 
                 {aberta && (

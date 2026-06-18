@@ -298,7 +298,7 @@ function Calendario({ local, value, onChange, accent }) {
 // ════════════════════════════════════════════════════════════
 //  APP
 // ════════════════════════════════════════════════════════════
-export default function App({ onVoltar }) {
+export default function App({ onVoltar, perfil }) {
   // gate: "intro" → "rgpd" → "form" (wizard) → confirmação. "recusou" = saída.
   const [phase, setPhase] = useState("intro");
   const [step, setStep] = useState(0);
@@ -385,11 +385,11 @@ export default function App({ onVoltar }) {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [codigoGerado, setCodigoGerado] = useState(null);
+  const [reqSubmetida, setReqSubmetida] = useState(false);
   const [submitKey, setSubmitKey] = useState(0);
 
   useEffect(() => {
-    if (!isDone || phase !== "form" || codigoGerado) return;
+    if (!isDone || phase !== "form" || reqSubmetida) return;
 
     const { contacto = {}, docente = {}, datas, nomeEscola, tipoEstab, nuts, distrito, concelho,
       local, integradaEm, dominiosAE, disciplinasArtic, competencias, necessidades, impacto,
@@ -423,10 +423,10 @@ export default function App({ onVoltar }) {
 
     setSubmitting(true);
     setSubmitError(null);
-    supabase.rpc("submeter_requisicao", { dados: payload })
+    supabase.rpc("submeter_requisicao", { dados: payload, p_perfil_id: perfil?.id })
       .then(({ data, error }) => {
         if (error) { setSubmitError(error.message); }
-        else { setCodigoGerado(data); }
+        else { setReqSubmetida(true); }
       })
       .finally(() => setSubmitting(false));
   }, [isDone, phase, submitKey]);
@@ -692,23 +692,17 @@ export default function App({ onVoltar }) {
                 <h2 style={s.confirmTitle}>Erro ao submeter</h2>
                 <p style={s.confirmText}>{submitError}</p>
                 <div style={{ textAlign: "center" }}>
-                  <button type="button" onClick={() => { setSubmitError(null); setCodigoGerado(null); setSubmitKey(k => k + 1); }} style={{ ...s.btnPrimary, background: accent }}>Tentar novamente</button>
+                  <button type="button" onClick={() => { setSubmitError(null); setReqSubmetida(false); setSubmitKey(k => k + 1); }} style={{ ...s.btnPrimary, background: accent }}>Tentar novamente</button>
                 </div>
               </>
-            ) : codigoGerado ? (
+            ) : reqSubmetida ? (
               <>
                 <div style={{ ...s.confirmIcon, background: accent + "18", color: accent }}>✓</div>
                 <h2 style={s.confirmTitle}>Requisição submetida</h2>
-                {codigoGerado && (
-                  <div style={{ textAlign: "center", margin: "0 auto 20px" }}>
-                    <div style={{ fontSize: 13, color: "#8A847B", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em" }}>Código da sua requisição</div>
-                    <div style={{ fontFamily: "'Fraunces',serif", fontSize: 32, fontWeight: 800, color: accent, letterSpacing: ".04em", background: accent + "12", display: "inline-block", padding: "10px 28px", borderRadius: 14, border: `2px solid ${accent}40` }}>{codigoGerado}</div>
-                    <div style={{ marginTop: 12, fontSize: 13.5, color: "#6B655C", lineHeight: 1.5, maxWidth: 380, margin: "12px auto 0" }}>Guarde este código — vai precisar dele para avaliar a exposição no final.</div>
-                  </div>
-                )}
                 <p style={s.confirmText}>
                   As datas para <strong>{local === "evora" ? "Évora" : "Coimbra"}</strong> ficam
-                  automaticamente bloqueadas para outras escolas.
+                  automaticamente bloqueadas para outras escolas. No fim da exposição, a avaliação
+                  ficará disponível na sua área, associada a esta requisição.
                 </p>
                 <div style={s.resumo}>
                   <div style={s.resumoRow}><span style={s.resumoK}>Escola</span><span>{f.nomeEscola || "—"}</span></div>

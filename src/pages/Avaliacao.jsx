@@ -66,6 +66,12 @@ const SECTIONS = [
 
 const ACCENT = "#C77B54"; // tom neutro do questionário (sem local específico)
 
+function fmtData(iso) {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("T")[0].split("-");
+  return `${d}/${m}/${y}`;
+}
+
 // ── Componentes de campo ──
 function Field({ label, children, hint }) {
   return (
@@ -120,10 +126,11 @@ function TextInput({ value, onChange, placeholder }) {
   return <input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={s.input} />;
 }
 
-export default function App({ onVoltar }) {
-  const [phase, setPhase] = useState("codigo"); // codigo → intro → form → done
-  const [codigo, setCodigo] = useState("");
-  const [codigoErro, setCodigoErro] = useState(false);
+export default function App({ onVoltar, perfil }) {
+  const [phase, setPhase] = useState("lista"); // lista → intro → form → done
+  const [disponiveis, setDisponiveis] = useState(null); // null = a carregar
+  const [listaErro, setListaErro] = useState(false);
+  const [requisicaoId, setRequisicaoId] = useState(null);
   const [dadosReq, setDadosReq] = useState(null);
   const [step, setStep] = useState(0);
   const [f, setF] = useState({
@@ -140,33 +147,32 @@ export default function App({ onVoltar }) {
   const [submitError, setSubmitError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
-  // Validate code against Supabase
-  async function validarCodigo() {
-    const trimmed = codigo.trim();
-    if (!trimmed) { setCodigoErro(true); return; }
-    try {
-      const { data, error } = await supabase.rpc("validar_codigo", { p_codigo: trimmed });
-      if (error) { setCodigoErro(true); return; }
-      if (data?.valido === true) {
-        setCodigoErro(false);
-        setDadosReq(data);
-        // Pre-fill identification fields
-        setF((prev) => ({
-          ...prev,
-          ident: {
-            ...prev.ident,
-            escola: data.nome_escola || prev.ident?.escola || "",
-            docente: data.docente_nome || prev.ident?.docente || "",
-            email: data.docente_email || prev.ident?.email || "",
-          },
-        }));
-        setPhase("intro");
-      } else {
-        setCodigoErro(true);
-      }
-    } catch {
-      setCodigoErro(true);
-    }
+  // Carrega as avaliações disponíveis para o perfil autenticado
+  useEffect(() => {
+    if (phase !== "lista") return;
+    setDisponiveis(null);
+    setListaErro(false);
+    supabase.rpc("avaliacoes_disponiveis", { p_perfil_id: perfil?.id })
+      .then(({ data, error }) => {
+        if (error) { setListaErro(true); setDisponiveis([]); }
+        else setDisponiveis(Array.isArray(data) ? data : []);
+      });
+  }, [phase, perfil?.id]);
+
+  // Seleciona uma requisição da lista e avança para a avaliação
+  function selecionar(req) {
+    setRequisicaoId(req.requisicao_id);
+    setDadosReq(req);
+    setF((prev) => ({
+      ...prev,
+      ident: {
+        ...prev.ident,
+        escola: req.nome_escola || prev.ident?.escola || "",
+        docente: req.docente_nome || prev.ident?.docente || "",
+        email: req.docente_email || prev.ident?.email || "",
+      },
+    }));
+    setPhase("intro");
   }
 
   // Submit evaluation when wizard is done
@@ -174,10 +180,11 @@ export default function App({ onVoltar }) {
     if (phase !== "form" || !isDone || submitted || submitting) return;
     setSubmitting(true);
     setSubmitError(null);
-    supabase.rpc("submeter_avaliacao", { p_codigo: codigo.trim(), p_respostas: f })
-      .then(({ error }) => {
-        if (error) { setSubmitError(error.message); }
-        else { setSubmitted(true); }
+    supabase.rpc("submeter_avaliacao", { p_perfil_id: perfil?.id, p_requisicao_id: requisicaoId, p_respostas: f })
+      .then(({ data, error }) => {
+        if (error) setSubmitError(error.message);
+        else if (data === false) setSubmitError("Esta avaliação já não está disponível.");
+        else setSubmitted(true);
       })
       .finally(() => setSubmitting(false));
   }, [isDone, phase]);
@@ -200,30 +207,41 @@ export default function App({ onVoltar }) {
           <h1 style={s.title}>Avaliação pós-exposição</h1>
         </header>
 
-        {/* ───── ECRÃ DO CÓDIGO ───── */}
-        {phase === "codigo" && (
+        {/* ───── LISTA DE AVALIAÇÕES DISPONÍVEIS ───── */}
+        {phase === "lista" && (
           <div style={s.card}>
-            <div style={{ ...s.codeIcon, background: ACCENT + "16", color: ACCENT }}>🔑</div>
-            <h2 style={s.secTitle}>Código de requisição</h2>
+            <h2 style={s.secTitle}>Avaliações disponíveis</h2>
             <p style={s.codeText}>
-              Para aceder à avaliação, deverá indicar o código de requisição recebido por e-mail.
+              Selecione a requisição que pretende avaliar. Aparecem aqui as suas requisições que ainda não foram avaliadas.
             </p>
-            <input
-              type="text"
-              value={codigo}
-              onChange={(e) => { setCodigo(e.target.value); setCodigoErro(false); }}
-              onKeyDown={(e) => e.key === "Enter" && validarCodigo()}
-              placeholder="Ex.: REQ-2026-0042"
-              style={{ ...s.input, textAlign: "center", fontSize: 18, letterSpacing: "0.06em", textTransform: "uppercase", borderColor: codigoErro ? "#D9534F" : "#E4E1DA" }}
-            />
-            {codigoErro && <div style={s.codeErro}>Código não reconhecido. Verifique o e-mail de confirmação da requisição.</div>}
-            <button type="button" onClick={validarCodigo} style={{ ...s.btnPrimary, background: ACCENT, width: "100%", marginTop: 16 }}>
-              Aceder à avaliação
-            </button>
-            <p style={s.codeNota}>
-              Na versão final, o código é validado automaticamente contra a requisição que lhe deu origem.
-            </p>
-            <div style={{ textAlign: "center", marginTop: 8 }}>
+
+            {disponiveis === null ? (
+              <div style={{ textAlign: "center", color: "#A8A299", fontSize: 14, padding: "20px 0" }}>A carregar…</div>
+            ) : listaErro ? (
+              <div style={s.codeErro}>Não foi possível carregar as avaliações. Tente novamente.</div>
+            ) : disponiveis.length === 0 ? (
+              <div style={{ textAlign: "center", color: "#8A847B", fontSize: 14, padding: "16px 0", lineHeight: 1.6 }}>
+                Não tem avaliações pendentes.<br />As avaliações ficam disponíveis após criar uma requisição.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                {disponiveis.map((req) => (
+                  <button
+                    key={req.requisicao_id}
+                    type="button"
+                    onClick={() => selecionar(req)}
+                    style={{ ...s.option, flexDirection: "column", alignItems: "flex-start", gap: 4, borderColor: "#E4E1DA" }}
+                  >
+                    <span style={{ fontWeight: 600, color: "#2B2723", fontSize: 14.5 }}>{req.nome_escola || "Requisição"}</span>
+                    <span style={{ fontSize: 12.5, color: "#8A847B" }}>
+                      {req.local ? `${req.local} · ` : ""}{fmtData(req.data_inicio)} — {fmtData(req.data_fim)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ textAlign: "center", marginTop: 16 }}>
               <button type="button" onClick={() => onVoltar?.()} style={{ ...s.btnGhost, fontSize: 13.5, padding: "8px 16px" }}>← Voltar ao início</button>
             </div>
           </div>
@@ -232,7 +250,7 @@ export default function App({ onVoltar }) {
         {/* ───── INTRO ───── */}
         {phase === "intro" && (
           <div style={s.card}>
-            <div style={s.gateEyebrow}>Código validado · {codigo.toUpperCase()}</div>
+            <div style={s.gateEyebrow}>{dadosReq?.nome_escola || "Requisição selecionada"}</div>
             <h2 style={s.secTitle}>Apresentação e âmbito</h2>
             <div style={s.gateText}>
               <p style={{ margin: "0 0 12px" }}>
@@ -244,7 +262,7 @@ export default function App({ onVoltar }) {
               </p>
             </div>
             <div style={s.gateNav}>
-              <button type="button" onClick={() => setPhase("codigo")} style={s.btnGhost}>Voltar</button>
+              <button type="button" onClick={() => setPhase("lista")} style={s.btnGhost}>Voltar</button>
               <button type="button" onClick={() => setPhase("form")} style={{ ...s.btnPrimary, background: ACCENT }}>Começar avaliação</button>
             </div>
           </div>
@@ -443,7 +461,7 @@ export default function App({ onVoltar }) {
                 <div style={{ ...s.codeIcon, background: ACCENT + "18", color: ACCENT }}>✓</div>
                 <h2 style={s.confirmTitle}>Avaliação concluída</h2>
                 <p style={s.confirmText}>
-                  Obrigado por avaliar a exposição. A avaliação ficou automaticamente associada à requisição <strong>{codigo.toUpperCase()}</strong> e os dados alimentam as estatísticas do projeto.
+                  Obrigado por avaliar a exposição. A avaliação ficou automaticamente associada à requisição de <strong>{dadosReq?.nome_escola || "—"}</strong> e os dados alimentam as estatísticas do projeto.
                 </p>
                 <div style={{ textAlign: "center" }}>
                   <button type="button" onClick={() => onVoltar?.()} style={s.btnGhost}>← Voltar ao início</button>

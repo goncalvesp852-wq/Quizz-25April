@@ -61,8 +61,8 @@ export default function App() {
   }
 
   // 3) Utilizador normal (tipo_perfil 1) → site público "25 de Abril em 3D"
-  if (page === "requisicao") return <Requisicao onVoltar={goHome} />;
-  if (page === "avaliacao")  return <Avaliacao  onVoltar={goHome} />;
+  if (page === "requisicao") return <Requisicao perfil={perfil} onVoltar={goHome} />;
+  if (page === "avaliacao")  return <Avaliacao  perfil={perfil} onVoltar={goHome} />;
 
   return (
     <Homepage

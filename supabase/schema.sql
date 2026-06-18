@@ -28,7 +28,6 @@ create policy "admin vê todos" on public.perfis
 -- ── Requisições ────────────────────────────────────────────
 create table public.requisicoes (
   id              bigint primary key generated always as identity,
-  codigo          text unique not null,           -- ex: REQ-2026-0042
   local           text not null check (local in ('coimbra','evora')),
   data_inicio     date not null,
   data_fim        date not null,
@@ -74,7 +73,6 @@ create policy "equipa lê requisições" on public.requisicoes
 create table public.avaliacoes (
   id              bigint primary key generated always as identity,
   requisicao_id   bigint not null references public.requisicoes on delete cascade,
-  codigo          text not null,                 -- mesmo código da requisição
   respostas       jsonb not null default '{}',   -- todas as respostas do wizard
   criado_em       timestamptz default now()
 );
@@ -82,86 +80,11 @@ alter table public.avaliacoes enable row level security;
 create policy "equipa lê avaliações" on public.avaliacoes
   for select using (auth.role() = 'authenticated');
 
--- ── Função: submeter requisição (chamada pelo site público) ─
--- Gera o código, valida sobreposição, insere e devolve o código.
-create or replace function public.submeter_requisicao(dados jsonb)
-returns text
-language plpgsql security definer as $$
-declare
-  novo_codigo text;
-  seq         int;
-begin
-  -- Gera código sequencial: REQ-AAAA-NNNNN
-  select coalesce(max(id), 0) + 1 into seq from public.requisicoes;
-  novo_codigo := 'REQ-' || extract(year from now())::text || '-' || lpad(seq::text, 4, '0');
-
-  insert into public.requisicoes (
-    codigo, local, data_inicio, data_fim,
-    nome_escola, tipo_estab, nuts, distrito, concelho, morada, codigo_postal, tel_inst, email_inst,
-    docente_nome, docente_cargo, docente_tel, docente_email,
-    dados_pedagogicos
-  ) values (
-    novo_codigo,
-    dados->>'local',
-    (dados->>'data_inicio')::date,
-    (dados->>'data_fim')::date,
-    dados->>'nome_escola', dados->>'tipo_estab', dados->>'nuts',
-    dados->>'distrito', dados->>'concelho', dados->>'morada',
-    dados->>'codigo_postal', dados->>'tel_inst', dados->>'email_inst',
-    dados->>'docente_nome', dados->>'docente_cargo',
-    dados->>'docente_tel', dados->>'docente_email',
-    dados->'dados_pedagogicos'
-  );
-
-  return novo_codigo;
-end;
-$$;
-
--- ── Função: validar código de avaliação ────────────────────
-create or replace function public.validar_codigo(p_codigo text)
-returns jsonb
-language plpgsql security definer as $$
-declare
-  req public.requisicoes;
-begin
-  select * into req from public.requisicoes
-  where codigo = upper(trim(p_codigo)) and estado = 'ativa';
-
-  if not found then
-    return jsonb_build_object('valido', false);
-  end if;
-
-  return jsonb_build_object(
-    'valido',        true,
-    'requisicao_id', req.id,
-    'codigo',        req.codigo,
-    'local',         req.local,
-    'data_inicio',   req.data_inicio,
-    'data_fim',      req.data_fim,
-    'nome_escola',   req.nome_escola,
-    'docente_nome',  req.docente_nome,
-    'docente_email', req.docente_email,
-    'distrito',      req.distrito,
-    'concelho',      req.concelho
-  );
-end;
-$$;
-
--- ── Função: submeter avaliação ─────────────────────────────
-create or replace function public.submeter_avaliacao(p_codigo text, p_respostas jsonb)
-returns boolean
-language plpgsql security definer as $$
-declare
-  req_id bigint;
-begin
-  select id into req_id from public.requisicoes
-  where codigo = upper(trim(p_codigo)) and estado = 'ativa';
-
-  if not found then return false; end if;
-
-  insert into public.avaliacoes (requisicao_id, codigo, respostas)
-  values (req_id, upper(trim(p_codigo)), p_respostas);
-
-  return true;
-end;
-$$;
+-- ── Funções: requisição/avaliação por perfil ───────────────
+-- O modelo deixou de usar `codigo`. As requisições e avaliações
+-- ligam-se a um perfil através da tabela `associacao`. As funções
+-- estão definidas em `avaliacoes_por_perfil.sql`:
+--   · submeter_requisicao(dados jsonb, p_perfil_id bigint) -> bigint
+--   · avaliacoes_disponiveis(p_perfil_id bigint) -> jsonb
+--   · submeter_avaliacao(p_perfil_id, p_requisicao_id, p_respostas) -> boolean
+-- Ver também: auth.sql, foreign_keys.sql, associacao.sql.
